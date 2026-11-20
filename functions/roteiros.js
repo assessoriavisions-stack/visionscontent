@@ -8,6 +8,7 @@ const { ESQUEMAS, temas: ESQUEMA_TEMAS, duracaoEstimadaSeg, validarConteudo } = 
 const trava = require('./ia/travaAntiIA');
 const cat = require('./ia/catalogos');
 const { exigirDnaCompleto } = require('./dna');
+const { carregarEstrategiaEFoco } = require('./estrategia');
 
 const OPCOES_IA = { secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 540, memory: '512MiB' };
 const MAX_VERSOES = 10;
@@ -20,6 +21,7 @@ function escolha(valor, lista, nome) {
 }
 
 function validarEscolhasBase(data) {
+  const editoria = typeof data.editoria === 'string' && data.editoria.trim() ? data.editoria.trim().slice(0, 80) : null;
   const formato = escolha(data.formato, cat.FORMATOS, 'o formato');
   const pilar = escolha(data.pilar, cat.PILARES, 'o pilar');
   const estilo = escolha(data.estilo, cat.ESTILOS, 'o estilo');
@@ -27,7 +29,7 @@ function validarEscolhasBase(data) {
     throw new HttpsError('invalid-argument', 'Esse estilo não combina com o formato e o pilar escolhidos. Escolha outro estilo.');
   }
   const angulo = escolha(data.angulo, cat.ANGULOS, 'o ângulo');
-  return { formato, pilar, estilo, angulo };
+  return { formato, pilar, estilo, angulo, editoria };
 }
 
 function validarEscolhas(data) {
@@ -41,7 +43,8 @@ function validarEscolhas(data) {
   const cta = escolha(data.cta, cat.CTAS, 'o CTA');
   const ehStory = cat.FORMATOS_STORY.includes(base.formato);
   const estiloLegenda = ehStory ? null : escolha(data.estiloLegenda, cat.ESTILOS_LEGENDA, 'o estilo de legenda');
-  return { ...base, tema, temaSugeridoPelaIA: data.temaSugeridoPelaIA === true, framework, formatoVisual, cta, estiloLegenda };
+  const editoria = typeof data.editoria === 'string' && data.editoria.trim() ? data.editoria.trim().slice(0, 80) : null;
+  return { ...base, tema, temaSugeridoPelaIA: data.temaSugeridoPelaIA === true, editoria, framework, formatoVisual, cta, estiloLegenda };
 }
 
 // ---------- contexto de aprendizado ----------
@@ -151,12 +154,13 @@ async function gerarComDuracao({ escolhas, prompt, padroes, aoGerar = async () =
 exports.sugerirTemas = callableCliente(async ({ data }, { uid, cliente }) => {
   const escolhas = validarEscolhasBase(data || {});
   const dna = await exigirDnaCompleto(uid);
-  const [padroes, recentes, aprend] = await Promise.all([
+  const [padroes, recentes, aprend, ctxEstr] = await Promise.all([
     trava.carregarPadroes(db, dna.palavrasProibidas),
     carregarRecentes(uid),
     carregarAprendizados(uid, escolhas, cliente),
+    carregarEstrategiaEFoco(uid),
   ]);
-  const system = SYSTEM_TEMAS(dna, escolhas, recentes.temas, aprend.melhores);
+  const system = SYSTEM_TEMAS(dna, escolhas, recentes.temas, aprend.melhores, ctxEstr.estrategia, ctxEstr.foco);
   const validar = (r) => (Array.isArray(r?.temas) && r.temas.length === 5 ? [] : ['precisa de exatamente 5 temas']);
   const mensagens = [{ role: 'user', content: 'Sugira os 5 temas.' }];
   const primeiro = await gerarJSON({ chave: 'temas', system, mensagens, esquema: ESQUEMA_TEMAS, validar, maxTokens: 6000 });
@@ -196,7 +200,7 @@ exports.gerarRoteiro = callableCliente(async ({ data }, { uid, cliente }) => {
     if (anterior.parteSerie >= total) throw new HttpsError('failed-precondition', `Essa série já tem as ${total} partes.`);
     escolhas = {
       formato: 'serie', pilar: primeira.pilar, estilo: primeira.estilo, angulo: primeira.angulo, tema: primeira.tema,
-      temaSugeridoPelaIA: primeira.temaSugeridoPelaIA, framework: primeira.framework, formatoVisual: primeira.formatoVisual,
+      temaSugeridoPelaIA: primeira.temaSugeridoPelaIA, editoria: primeira.editoria || null, framework: primeira.framework, formatoVisual: primeira.formatoVisual,
       cta: anterior.parteSerie + 1 < total ? 'parte2' : (cat.ctaSugerido('reels', primeira.pilar, dna.negocio?.destinoVenda)),
       estiloLegenda: primeira.estiloLegenda,
     };
@@ -216,12 +220,13 @@ exports.gerarRoteiro = callableCliente(async ({ data }, { uid, cliente }) => {
     if (escolhas.formato === 'serie') contextoSerie = 'Esta é a parte 1. Defina o nome da série e quantas partes ela terá. Termine puxando a parte 2.';
   }
 
-  const [padroes, recentes, aprendizados] = await Promise.all([
+  const [padroes, recentes, aprendizados, ctxEstr] = await Promise.all([
     trava.carregarPadroes(db, dna.palavrasProibidas),
     carregarRecentes(uid),
     carregarAprendizados(uid, escolhas, cliente),
+    carregarEstrategiaEFoco(uid),
   ]);
-  const prompt = montarPromptRoteiro({ dna, escolhas, padroes, aprendizados, ganchosRecentes: recentes.ganchos, campanha: null, serie: contextoSerie });
+  const prompt = montarPromptRoteiro({ dna, escolhas, padroes, aprendizados, ganchosRecentes: recentes.ganchos, campanha: null, serie: contextoSerie, estrategia: ctxEstr.estrategia, foco: ctxEstr.foco });
 
   const r = await gerarComDuracao({
     escolhas, prompt, padroes,
@@ -245,6 +250,7 @@ exports.gerarRoteiro = callableCliente(async ({ data }, { uid, cliente }) => {
     avisos,
     trava: r.trava,
     campanhaId: data.campanhaId || null,
+    focoMes: ctxEstr.foco ? require('./lib/tempo').mesReferencia() : null,
     serieId,
     parteSerie,
     status: 'rascunho',

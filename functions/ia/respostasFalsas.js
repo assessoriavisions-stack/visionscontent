@@ -33,7 +33,8 @@ function conteudoFalso(formato, system, longo) {
   const tema = temaDo(system);
   const legenda = 'Essa foi uma parte da minha jornada na cozinha. Comenta FORNO que eu te mando a tabela de temperaturas.';
   if (formato === 'reels' || formato === 'serie') {
-    const base = { bigIdea: 'Forno de casa engana: meça a temperatura de verdade.', blocos: blocosReels(tema, longo), ganchos: ganchos(tema), angulosParaTestar: angulos, legenda, notaProducao: 'Grave o gancho com luz natural.' };
+    const comCampanha = /Campanha ativa: (.+)/.exec(system);
+    const base = { bigIdea: `Forno de casa engana: meça a temperatura de verdade.${comCampanha ? ` Campanha: ${comCampanha[1].split(' (')[0]}.` : ''}`, blocos: blocosReels(tema, longo), ganchos: ganchos(tema), angulosParaTestar: angulos, legenda, notaProducao: 'Grave o gancho com luz natural.' };
     return formato === 'serie' ? { nomeSerie: 'Forno sem mistério', totalPartes: 3, ...base } : base;
   }
   if (formato === 'carrossel') {

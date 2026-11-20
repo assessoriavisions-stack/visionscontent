@@ -4,6 +4,7 @@ const { faltandoNoDna } = require('../dna');
 
 const completo = {
   negocio: { oQueFaz: 'Bolos de pote', paraQuem: 'Mães', destinoVenda: 'whatsapp' },
+  produtos: [{ nome: 'Kit festa' }],
   tom: {
     eixos: { tecnicoProximo: 4, serioIrreverente: 3, formalInformal: 5, calmoIntenso: 2 },
     exemplosReais: ['x'.repeat(50), 'y'.repeat(50), 'z'.repeat(50)],
@@ -14,7 +15,7 @@ const completo = {
 };
 
 test('DNA completo não tem pendência', () => assert.deepEqual(faltandoNoDna(completo), []));
-test('sem DNA, falta tudo', () => assert.equal(faltandoNoDna(null).length, 8));
+test('sem DNA, falta tudo', () => assert.equal(faltandoNoDna(null).length, 9));
 test('exemplos curtos não contam', () => {
   const d = { ...completo, tom: { ...completo.tom, exemplosReais: ['curto', 'y'.repeat(50), 'z'.repeat(50)] } };
   assert.deepEqual(faltandoNoDna(d), ['3 exemplos reais']);

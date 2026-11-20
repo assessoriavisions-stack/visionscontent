@@ -226,7 +226,7 @@
     /* DNA do perfil */
     .estreito { max-width: 720px; }
     textarea { min-height: 0; resize: vertical; line-height: 1.5; }
-    .progresso { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+    .progresso { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
     .progresso button { height: 5px; border: 0; padding: 0; border-radius: 99px; background: var(--linha); cursor: pointer; }
     .progresso button:disabled { cursor: default; }
     .progresso button.feito { background: var(--tinta); }
@@ -293,6 +293,22 @@
     .item-roteiro { text-align: left; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; padding: 16px 18px; border-radius: var(--raio-sm); border: 1px solid var(--linha); background: var(--superficie); cursor: pointer; }
     .item-roteiro strong { font-family: var(--serifa); font-weight: 500; font-size: 17px; }
     .item-roteiro:hover { border-color: #CFC7B5; box-shadow: var(--sombra-leve); }
+
+    /* Produtos, foco do mês, estratégia */
+    .produto { border: 1px solid var(--linha); border-radius: var(--raio-sm); padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; background: var(--superficie-2); }
+    .interruptor { display: inline-flex; align-items: center; gap: 10px; margin: 0; cursor: pointer; font-weight: 500; }
+    .interruptor input { appearance: none; -webkit-appearance: none; width: 42px; height: 24px; min-height: 0; padding: 0; border-radius: 99px; background: var(--linha); border: 0; position: relative; cursor: pointer; transition: background .15s; flex: none; }
+    .interruptor input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.2); transition: transform .15s; }
+    .interruptor input:checked { background: var(--verde); }
+    .interruptor input:checked::after { transform: translateX(18px); }
+    .interruptor input:focus { box-shadow: 0 0 0 4px var(--azul-claro); }
+    .campanha { background: var(--amarelo-claro); border: 1px solid #F6E3A8; border-radius: var(--raio-sm); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+    .campanha strong { font-family: var(--serifa); font-weight: 500; font-size: 18px; }
+    .foco-vazio { border-color: #F6E3A8; background: linear-gradient(180deg, var(--amarelo-claro), var(--superficie) 70%); }
+    .posicionamento { font-family: var(--serifa); font-size: 21px; line-height: 1.35; color: var(--tinta); }
+    .chip.sem-x { padding: 5px 12px; }
+    .chip-escolha { border: 1px solid var(--linha); background: var(--superficie); border-radius: 999px; padding: 7px 14px; cursor: pointer; font-size: 14px; color: var(--tinta-2); }
+    .chip-escolha.ativo { background: var(--tinta); border-color: var(--tinta); color: var(--marfim); }
 
     /* Fase de crescimento */
     .selo.testes { background: var(--azul-claro); color: var(--azul); }
@@ -781,7 +797,7 @@
       );
     }
 
-    function CartaoCliente({ c, onEditar, onSenha }) {
+    function CartaoCliente({ c, onEditar, onSenha, onEstrategia }) {
       const [ocupado, setOcupado] = useState(false);
       const ativo = c.status === 'ativo';
       const usadas = geracoesDoMes(c);
@@ -852,6 +868,7 @@
 
           <div className="acoes">
             <button className="btn mini" onClick={() => onEditar(c)} disabled={ocupado}>Editar</button>
+            <button className="btn mini" onClick={() => onEstrategia(c)} disabled={ocupado}>Estratégia</button>
             <button className="btn mini" onClick={novaSenha} disabled={ocupado}>Nova senha</button>
             <span style={{ flex: 1 }} />
             <button className={'btn mini ' + (ativo ? 'perigo' : 'positivo')} onClick={alternarBloqueio} disabled={ocupado}>
@@ -869,6 +886,7 @@
       const [filtro, setFiltro] = useState('todos');
       const [modal, setModal] = useState(null); // {tipo: 'novo'|'editar'|'senha', dados}
       const [configFalta, setConfigFalta] = useState(false);
+      const [estrategiaDe, setEstrategiaDe] = useState(null);
 
       useEffect(() => {
         const parar = db.collection('clientes').onSnapshot(
@@ -908,6 +926,7 @@
       }
 
       const fechar = useCallback(() => setModal(null), []);
+      if (estrategiaDe) return <EstrategiaCliente cliente={estrategiaDe} onVoltar={() => setEstrategiaDe(null)} />;
 
       return (
         <>
@@ -962,7 +981,8 @@
                 {lista.map((c) => (
                   <CartaoCliente key={c.id} c={c}
                     onEditar={(c) => setModal({ tipo: 'editar', dados: c })}
-                    onSenha={(d) => setModal({ tipo: 'senha', dados: d })} />
+                    onSenha={(d) => setModal({ tipo: 'senha', dados: d })}
+                    onEstrategia={(c) => { setEstrategiaDe(c); window.scrollTo(0, 0); }} />
                 ))}
               </div>
             </div>
@@ -1056,6 +1076,7 @@
       if (!n.oQueFaz?.trim()) f.push('o que você faz');
       if (!n.paraQuem?.trim()) f.push('para quem');
       if (!DESTINOS_VENDA[n.destinoVenda]) f.push('onde a venda acontece');
+      if (!(dna?.produtos || []).some((p) => p?.nome?.trim())) f.push('pelo menos 1 produto');
       const eixos = dna?.tom?.eixos || {};
       if (EIXOS.some((e) => !(eixos[e.id] >= 1 && eixos[e.id] <= 5))) f.push('os eixos do tom');
       if (exemplosValidos(dna).length < MIN_EXEMPLOS) f.push(`${MIN_EXEMPLOS} exemplos reais`);
@@ -1285,6 +1306,10 @@
         ok: (d) => d.negocio?.oQueFaz?.trim() && d.negocio?.paraQuem?.trim() && DESTINOS_VENDA[d.negocio?.destinoVenda],
         falta: 'Preencha o que você faz, para quem e onde a venda acontece.',
         salvar: (d) => ({ negocio: d.negocio || {} }) },
+      { id: 'produtos', titulo: 'O que você vende', sub: 'Seus produtos ou serviços. Os roteiros de venda usam isso e nunca inventam preço.', Campos: CamposProdutos,
+        ok: (d) => (d.produtos || []).some((p) => p.nome?.trim()),
+        falta: 'Cadastre pelo menos 1 produto ou serviço (o nome já basta).',
+        salvar: (d) => ({ produtos: limparProdutos(d.produtos) }) },
       { id: 'tom', titulo: 'Seu tom', sub: 'Marque de 1 a 5 onde você está em cada eixo. Não tem certo ou errado.', Campos: CamposTom,
         ok: (d) => EIXOS.every((e) => d.tom?.eixos?.[e.id]),
         falta: 'Marque os 4 eixos.',
@@ -1341,7 +1366,7 @@
               <div className="stack">
                 <span className="sobretitulo">Bem-vindo(a), {primeiroNome(cliente.nome)}</span>
                 <h1>Vamos montar o DNA do seu perfil</h1>
-                <p className="suave">São 6 passos rápidos. Com eles, a plataforma escreve roteiros com o seu jeito de falar, e dois perfis do mesmo nicho nunca recebem roteiros parecidos.</p>
+                <p className="suave">São 7 passos rápidos. Com eles, a plataforma escreve roteiros com o seu jeito de falar, e dois perfis do mesmo nicho nunca recebem roteiros parecidos.</p>
               </div>
             )}
             <div className="progresso" aria-label={`Passo ${i + 1} de ${ETAPAS.length}`}>
@@ -1404,6 +1429,7 @@
         ['Seu tom', <CamposTom d={d} set={setD} />],
         ['Como você escreve', <CamposExemplos d={d} set={setD} />],
         ['Suas palavras', <CamposExpressoes d={d} set={setD} />],
+        ['O que você vende', <CamposProdutos d={d} set={setD} />],
         ['Seu tema', <CamposTema d={d} set={setD} />],
         ['Perfil de voz', <CampoPerfilDeVoz uid={uid} d={d} set={setD} />],
       ];
@@ -1503,7 +1529,7 @@
       );
     }
 
-    function CriarRoteiro({ dna, onPronto, onVoltar }) {
+    function CriarRoteiro({ dna, estrategia, onPronto, onVoltar }) {
       const [e, setE] = useState({});
       const [passo, setPasso] = useState('formato');
       const [temas, setTemas] = useState(null);
@@ -1562,7 +1588,7 @@
         setErro('');
         setBuscandoTemas(true);
         try {
-          const r = await chamar('sugerirTemas', { formato: e.formato, pilar: e.pilar, estilo: e.estilo, angulo: e.angulo }, { timeout: 300000 });
+          const r = await chamar('sugerirTemas', { formato: e.formato, pilar: e.pilar, estilo: e.estilo, angulo: e.angulo, editoria: e.editoria || null }, { timeout: 300000 });
           setTemas(r.temas);
         } catch (err) {
           setErro(mensagemErro(err));
@@ -1624,6 +1650,15 @@
                 onChange={(ev) => setE({ ...e, tema: ev.target.value, temaSugeridoPelaIA: false })} />
               <p className="dica">1 assunto só. Quanto mais específico, melhor o roteiro.</p>
             </div>
+            {estrategia?.editorias?.length > 0 && (
+              <div>
+                <label htmlFor="editoria">Editoria <span className="suave">(opcional)</span></label>
+                <select id="editoria" value={e.editoria || ''} onChange={(ev) => { setE({ ...e, editoria: ev.target.value || null }); setTemas(null); }}>
+                  <option value="">Nenhuma em especial</option>
+                  {estrategia.editorias.filter((x) => !x.pilar || x.pilar === e.pilar).map((x) => <option key={x.nome} value={x.nome}>{x.nome}</option>)}
+                </select>
+              </div>
+            )}
             <button type="button" className="btn" onClick={sugerirTemas} disabled={buscandoTemas}>
               {buscandoTemas ? <><span className="girando" /> Pensando em temas...</> : temas ? 'Sugerir outros temas' : 'Sugerir temas'}
             </button>
@@ -1682,6 +1717,7 @@
                   <dd><button type="button" className="btn texto" onClick={() => { setRevisando(true); ir(p); }}>{rotulos[p] || 'escolher'}</button></dd>
                 </React.Fragment>
               ))}
+              {e.editoria && <><dt>Editoria</dt><dd>{e.editoria}</dd></>}
               {!ehStory && <><dt>Legenda</dt><dd><button type="button" className="btn texto" onClick={() => { setRevisando(true); ir('cta'); }}>{ESTILOS_LEGENDA[e.estiloLegenda] || 'escolher'}</button></dd></>}
             </dl>
             {!ehStory && <p className="suave peq">O roteiro vem com 5 ganchos diferentes para você testar com Reels de teste, e 3 ângulos para contar a mesma história depois.</p>}
@@ -1958,17 +1994,444 @@
       );
     }
 
+    // ==========================================================
+    // Produtos, foco do mês e estratégia do cliente
+    // ==========================================================
+    const limparProdutos = (lista) => (lista || [])
+      .map((p) => ({ nome: (p.nome || '').trim(), preco: (p.preco || '').trim(), descricao: (p.descricao || '').trim(), paraQuem: (p.paraQuem || '').trim() }))
+      .filter((p) => p.nome);
+
+    function CamposProdutos({ d, set }) {
+      const produtos = d.produtos?.length ? d.produtos : [{ nome: '', preco: '', descricao: '', paraQuem: '' }];
+      const mudar = (lista) => set({ ...d, produtos: lista });
+      const campo = (i, k) => (ev) => mudar(produtos.map((p, j) => (j === i ? { ...p, [k]: ev.target.value } : p)));
+      return (
+        <div className="stack">
+          {produtos.map((p, i) => (
+            <div className="produto" key={i}>
+              <div className="entre">
+                <span className="sobretitulo">Produto {i + 1}</span>
+                {produtos.length > 1 && <button type="button" className="btn texto peq" onClick={() => mudar(produtos.filter((_, j) => j !== i))}>Remover</button>}
+              </div>
+              <div className="duas">
+                <div>
+                  <label htmlFor={`p-nome-${i}`}>Nome</label>
+                  <input id={`p-nome-${i}`} placeholder="Ex.: Kit festa 30 potes" value={p.nome || ''} onChange={campo(i, 'nome')} />
+                </div>
+                <div>
+                  <label htmlFor={`p-preco-${i}`}>Preço <span className="suave">(opcional)</span></label>
+                  <input id={`p-preco-${i}`} placeholder="Ex.: R$ 270" value={p.preco || ''} onChange={campo(i, 'preco')} />
+                </div>
+              </div>
+              <div>
+                <label htmlFor={`p-desc-${i}`}>O que é <span className="suave">(opcional)</span></label>
+                <input id={`p-desc-${i}`} placeholder="Ex.: 30 bolos de pote sortidos, entrega no mesmo dia" value={p.descricao || ''} onChange={campo(i, 'descricao')} />
+              </div>
+              <div>
+                <label htmlFor={`p-quem-${i}`}>Para quem <span className="suave">(opcional)</span></label>
+                <input id={`p-quem-${i}`} placeholder="Ex.: festas de até 30 pessoas" value={p.paraQuem || ''} onChange={campo(i, 'paraQuem')} />
+              </div>
+            </div>
+          ))}
+          {produtos.length < 30 && <button type="button" className="btn" onClick={() => mudar([...produtos, { nome: '', preco: '', descricao: '', paraQuem: '' }])}>Adicionar outro produto</button>}
+        </div>
+      );
+    }
+
+    function useDoc(caminho) {
+      const [v, setV] = useState(undefined);
+      useEffect(() => {
+        if (!caminho) return;
+        return db.doc(caminho).onSnapshot((s) => setV(s.exists ? s.data() : null), () => setV(null));
+      }, [caminho]);
+      return v;
+    }
+
+    function nomeDoMesRef(mes) {
+      return new Intl.DateTimeFormat('pt-BR', { month: 'long', timeZone: FUSO }).format(new Date(`${mes}-15T12:00:00-03:00`));
+    }
+    const dataBR = (iso) => (iso ? iso.split('-').reverse().join('/') : '');
+    const hojeISO = () => new Intl.DateTimeFormat('en-CA', { timeZone: FUSO }).format(new Date());
+    const campanhaVigente = (foco) => (foco?.campanha?.ativa && foco.campanha.nome && !(foco.campanha.fim && foco.campanha.fim < hojeISO()) ? foco.campanha : null);
+    const CAMPANHA_VAZIA = { ativa: false, nome: '', oferta: '', mecanica: '', regras: '', inicio: '', fim: '', comoParticipar: '', cta: '' };
+
+    function FormFoco({ uid, produtos = [], quem, onVoltar }) {
+      const mes = mesReferencia();
+      const [f, setF] = useState(null);
+      const [veioDoAnterior, setVeioDoAnterior] = useState(null);
+      const [salvando, setSalvando] = useState(false);
+      const [erro, setErro] = useState('');
+
+      useEffect(() => {
+        (async () => {
+          const atual = await db.doc(`clientes/${uid}/focos/${mes}`).get().catch(() => null);
+          if (atual?.exists) return setF({ ...atual.data(), campanha: { ...CAMPANHA_VAZIA, ...(atual.data().campanha || {}) } });
+          // Pré-preenche com o último foco salvo.
+          const ant = await db.collection(`clientes/${uid}/focos`).orderBy(firebase.firestore.FieldPath.documentId(), 'desc').limit(3).get().catch(() => null);
+          const doc = ant?.docs.find((d) => d.id < mes);
+          if (doc) {
+            setVeioDoAnterior(doc.id);
+            const c = { ...CAMPANHA_VAZIA, ...(doc.data().campanha || {}) };
+            // Campanha que já acabou não vem marcada.
+            if (c.fim && c.fim < hojeISO()) c.ativa = false;
+            return setF({ produtoFoco: doc.data().produtoFoco || '', objetivo: doc.data().objetivo || '', campanha: c });
+          }
+          setF({ produtoFoco: produtos[0]?.nome || '', objetivo: '', campanha: { ...CAMPANHA_VAZIA } });
+        })();
+      }, [uid, mes]);
+
+      if (!f) return <Carregando />;
+      const c = f.campanha;
+      const mudarC = (k) => (ev) => setF({ ...f, campanha: { ...c, [k]: ev.target.value } });
+      const nomes = produtos.map((p) => p.nome);
+      const outro = f.produtoFoco && !nomes.includes(f.produtoFoco);
+
+      async function salvar() {
+        setErro('');
+        if (!f.produtoFoco?.trim() && !f.objetivo?.trim()) return setErro('Escolha o produto em destaque ou escreva o objetivo do mês.');
+        if (c.ativa && !c.nome?.trim()) return setErro('Dê um nome para a campanha.');
+        if (c.ativa && !c.mecanica?.trim()) return setErro('Explique a mecânica da campanha: é ela que os roteiros vão usar.');
+        if (c.inicio && c.fim && c.fim < c.inicio) return setErro('A data de fim da campanha está antes do início.');
+        setSalvando(true);
+        try {
+          await db.doc(`clientes/${uid}/focos/${mes}`).set({
+            produtoFoco: (f.produtoFoco || '').trim(),
+            objetivo: (f.objetivo || '').trim(),
+            campanha: c.ativa ? Object.fromEntries(Object.entries(c).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v])) : { ...CAMPANHA_VAZIA },
+            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            atualizadoPor: quem,
+          });
+          toast(`Foco de ${nomeDoMesRef(mes)} salvo.`);
+          onVoltar();
+        } catch (e) {
+          setErro(mensagemErro(e));
+        }
+        setSalvando(false);
+      }
+
+      return (
+        <>
+          <Cabecalho><button className="btn fantasma mini" onClick={onVoltar}>Voltar</button></Cabecalho>
+          <main className="wrap conteudo estreito stack-lg">
+            <div className="stack">
+              <span className="sobretitulo">Foco do mês</span>
+              <h1>O que vamos vender em {nomeDoMesRef(mes)}?</h1>
+              <p className="suave">O foco muda o CTA e o assunto dos roteiros de venda. Defina todo mês, mesmo que repita o anterior.</p>
+              {veioDoAnterior && <div className="aviso">Trouxe o foco de {nomeDoMesRef(veioDoAnterior)} para você ajustar. Confira antes de salvar.</div>}
+            </div>
+            <section className="cartao"><div className="cartao-corpo stack">
+              <h2>Destaque do mês</h2>
+              <div>
+                <label htmlFor="foco-produto">Produto em destaque</label>
+                <select id="foco-produto" value={outro ? '__outro' : (f.produtoFoco || '')} onChange={(ev) => setF({ ...f, produtoFoco: ev.target.value === '__outro' ? ' ' : ev.target.value })}>
+                  <option value="">Nenhum em especial</option>
+                  {nomes.map((n) => <option key={n} value={n}>{n}</option>)}
+                  <option value="__outro">Outro</option>
+                </select>
+                {outro && <input style={{ marginTop: 8 }} placeholder="Nome do produto ou serviço" value={f.produtoFoco.trimStart()} onChange={(ev) => setF({ ...f, produtoFoco: ev.target.value })} />}
+              </div>
+              <div>
+                <label htmlFor="foco-objetivo">Objetivo do mês</label>
+                <textarea id="foco-objetivo" rows="3" placeholder="Ex.: vender 40 kits para festas de fim de ano e abrir a agenda de janeiro" value={f.objetivo || ''} onChange={(ev) => setF({ ...f, objetivo: ev.target.value })} />
+              </div>
+            </div></section>
+
+            <section className="cartao"><div className="cartao-corpo stack">
+              <div className="entre">
+                <h2>Campanha</h2>
+                <label className="interruptor">
+                  <input type="checkbox" checked={!!c.ativa} onChange={(ev) => setF({ ...f, campanha: { ...c, ativa: ev.target.checked } })} />
+                  <span>{c.ativa ? 'Tem campanha este mês' : 'Sem campanha'}</span>
+                </label>
+              </div>
+              {c.ativa && (
+                <>
+                  <div>
+                    <label htmlFor="c-nome">Nome da campanha</label>
+                    <input id="c-nome" placeholder="Ex.: Natal sem estresse" value={c.nome} onChange={mudarC('nome')} />
+                  </div>
+                  <div>
+                    <label htmlFor="c-oferta">Oferta</label>
+                    <input id="c-oferta" placeholder="Ex.: kit com 10% de desconto e frete grátis" value={c.oferta} onChange={mudarC('oferta')} />
+                  </div>
+                  <div>
+                    <label htmlFor="c-mecanica">Mecânica</label>
+                    <textarea id="c-mecanica" rows="4" placeholder="Como a campanha funciona. Ex.: quem fechar o kit até dia 10 ganha 5 potes extras; depois disso vale só o frete grátis." value={c.mecanica} onChange={mudarC('mecanica')} />
+                  </div>
+                  <div>
+                    <label htmlFor="c-regras">Regras e condições <span className="suave">(opcional)</span></label>
+                    <textarea id="c-regras" rows="2" placeholder="Ex.: pedidos com 48h de antecedência, só Campinas" value={c.regras} onChange={mudarC('regras')} />
+                  </div>
+                  <div className="duas">
+                    <div><label htmlFor="c-inicio">Começa em</label><input id="c-inicio" type="date" value={c.inicio} onChange={mudarC('inicio')} /></div>
+                    <div><label htmlFor="c-fim">Termina em</label><input id="c-fim" type="date" value={c.fim} onChange={mudarC('fim')} /></div>
+                  </div>
+                  <div>
+                    <label htmlFor="c-como">Como participar</label>
+                    <input id="c-como" placeholder="Ex.: chamar no WhatsApp com a palavra NATAL" value={c.comoParticipar} onChange={mudarC('comoParticipar')} />
+                  </div>
+                  <div>
+                    <label htmlFor="c-cta">Chamada da campanha (CTA)</label>
+                    <input id="c-cta" placeholder="Ex.: Comenta NATAL que eu te mando o cardápio" value={c.cta} onChange={mudarC('cta')} />
+                    <p className="dica">Depois da data de fim, a campanha sai dos roteiros sozinha.</p>
+                  </div>
+                </>
+              )}
+            </div></section>
+            {erro && <div className="erro" role="alert">{erro}</div>}
+            <div className="barra-acoes">
+              <button className="btn" onClick={onVoltar} disabled={salvando}>Cancelar</button>
+              <button className="btn primario" onClick={salvar} disabled={salvando}>{salvando ? <><span className="girando" /> Salvando...</> : 'Salvar foco do mês'}</button>
+            </div>
+          </main>
+        </>
+      );
+    }
+
+    function CartaoFoco({ foco, onEditar }) {
+      const mes = mesReferencia();
+      if (foco === undefined) return null;
+      if (!foco) {
+        return (
+          <section className="cartao foco-vazio">
+            <div className="cartao-corpo entre">
+              <div style={{ minWidth: 0, flex: '1 1 260px' }}>
+                <span className="sobretitulo">Foco de {nomeDoMesRef(mes)}</span>
+                <h3 style={{ marginTop: 6 }}>Defina o que você vai vender este mês</h3>
+                <p className="suave peq" style={{ marginTop: 4 }}>Produto em destaque e campanha, se tiver. Os roteiros de venda usam isso para mudar o assunto e o CTA.</p>
+              </div>
+              <button className="btn primario" onClick={onEditar}>Definir foco</button>
+            </div>
+          </section>
+        );
+      }
+      const c = campanhaVigente(foco);
+      return (
+        <section className="cartao">
+          <div className="cartao-corpo stack">
+            <div className="entre">
+              <span className="sobretitulo">Foco de {nomeDoMesRef(mes)}</span>
+              <button className="btn mini" onClick={onEditar}>Editar</button>
+            </div>
+            {foco.produtoFoco && <h3>{foco.produtoFoco}</h3>}
+            {foco.objetivo && <p className="suave">{foco.objetivo}</p>}
+            {c && (
+              <div className="campanha">
+                <span className="sobretitulo">Campanha ativa{c.fim ? ` até ${dataBR(c.fim)}` : ''}</span>
+                <strong>{c.nome}</strong>
+                {c.oferta && <p>{c.oferta}</p>}
+                {c.mecanica && <p className="suave peq">{c.mecanica}</p>}
+              </div>
+            )}
+          </div>
+        </section>
+      );
+    }
+
+    function LembreteMarca({ estrategia }) {
+      if (!estrategia) return null;
+      const b = estrategia.branding || {};
+      const temAlgo = b.posicionamento || b.promessa || b.personalidade || estrategia.editorias?.length;
+      if (!temAlgo) return null;
+      return (
+        <section className="cartao marca-lembrete">
+          <div className="faixa" />
+          <div className="cartao-corpo stack">
+            <span className="sobretitulo">Sua marca · definida com a Visions</span>
+            {b.posicionamento && <p className="posicionamento">{b.posicionamento}</p>}
+            <dl className="dados">
+              {b.promessa && <><dt>Promessa</dt><dd>{b.promessa}</dd></>}
+              {b.personalidade && <><dt>Personalidade</dt><dd>{b.personalidade}</dd></>}
+              {b.valores?.length > 0 && <><dt>Valores</dt><dd>{b.valores.join(', ')}</dd></>}
+              {estrategia.formatosPrioritarios?.length > 0 && <><dt>Formatos prioritários</dt><dd>{estrategia.formatosPrioritarios.map((f) => FORMATOS[f]).join(', ')}</dd></>}
+            </dl>
+            {estrategia.editorias?.length > 0 && (
+              <div>
+                <span className="sobretitulo">Suas editorias</span>
+                <div className="chips" style={{ marginTop: 8 }}>{estrategia.editorias.map((e) => <span className="chip sem-x" key={e.nome} title={e.descricao}>{e.nome}{e.pilar ? ` · ${e.pilar}` : ''}</span>)}</div>
+              </div>
+            )}
+            {b.naoFazer?.length > 0 && <p className="peq suave"><strong style={{ color: 'var(--tinta-2)' }}>Evite:</strong> {b.naoFazer.join('; ')}.</p>}
+          </div>
+        </section>
+      );
+    }
+
+    // ---------- admin: estratégia do cliente ----------
+    const ESTRATEGIA_VAZIA = { planoDeAcao: '', branding: { posicionamento: '', promessa: '', personalidade: '', valores: [], naoFazer: [] }, editorias: [], formatosPrioritarios: [], observacaoFormatos: '' };
+
+    function EstrategiaCliente({ cliente, onVoltar }) {
+      const uid = cliente.id;
+      const salvo = useDoc(`clientes/${uid}/estrategia/atual`);
+      const dnaSalvo = useDoc(`clientes/${uid}/dna/atual`);
+      const foco = useDoc(`clientes/${uid}/focos/${mesReferencia()}`);
+      const [e, setE] = useState(null);
+      const [prod, setProd] = useState(null);
+      const [sugeridos, setSugeridos] = useState(null);
+      const [pendencias, setPendencias] = useState([]);
+      const [organizando, setOrganizando] = useState(false);
+      const [salvando, setSalvando] = useState(false);
+      const [erro, setErro] = useState('');
+      const [tela, setTela] = useState('estrategia');
+
+      useEffect(() => { if (salvo !== undefined && !e) setE({ ...ESTRATEGIA_VAZIA, ...(salvo || {}), branding: { ...ESTRATEGIA_VAZIA.branding, ...(salvo?.branding || {}) } }); }, [salvo]);
+      useEffect(() => { if (dnaSalvo !== undefined && !prod) setProd({ produtos: dnaSalvo?.produtos || [] }); }, [dnaSalvo]);
+      if (!e || !prod) return <Carregando />;
+      if (tela === 'foco') return <FormFoco uid={uid} produtos={limparProdutos(prod.produtos)} quem="admin" onVoltar={() => setTela('estrategia')} />;
+
+      const b = e.branding;
+      const mudarB = (k) => (ev) => setE({ ...e, branding: { ...b, [k]: ev.target.value } });
+
+      async function organizar() {
+        setErro('');
+        setOrganizando(true);
+        try {
+          const r = await chamar('adminExtrairEstrategia', { plano: e.planoDeAcao }, { timeout: 300000 });
+          const x = r.estrategia;
+          setE({ ...e, branding: { ...ESTRATEGIA_VAZIA.branding, ...x.branding }, editorias: x.editorias, formatosPrioritarios: x.formatosPrioritarios, observacaoFormatos: x.observacaoFormatos });
+          setSugeridos(x.produtos?.length ? x.produtos : null);
+          setPendencias(r.pendencias || []);
+          toast('Plano organizado. Revise os campos e salve.');
+        } catch (err) {
+          setErro(mensagemErro(err));
+        }
+        setOrganizando(false);
+      }
+
+      async function salvar() {
+        setErro('');
+        setSalvando(true);
+        try {
+          await db.doc(`clientes/${uid}/estrategia/atual`).set({
+            planoDeAcao: e.planoDeAcao || '',
+            branding: { ...b, posicionamento: b.posicionamento.trim(), promessa: b.promessa.trim(), personalidade: b.personalidade.trim() },
+            editorias: e.editorias.map((x) => ({ nome: x.nome.trim(), descricao: (x.descricao || '').trim(), pilar: x.pilar || '' })).filter((x) => x.nome),
+            formatosPrioritarios: e.formatosPrioritarios,
+            observacaoFormatos: (e.observacaoFormatos || '').trim(),
+            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+          });
+          const produtos = limparProdutos(prod.produtos);
+          if (JSON.stringify(produtos) !== JSON.stringify(limparProdutos(dnaSalvo?.produtos))) {
+            await db.doc(`clientes/${uid}/dna/atual`).set({ produtos, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+          }
+          toast('Estratégia salva.');
+          onVoltar();
+        } catch (err) {
+          setErro(mensagemErro(err));
+        }
+        setSalvando(false);
+      }
+
+      const fc = campanhaVigente(foco);
+      return (
+        <>
+          <Cabecalho rotulo="Admin"><button className="btn fantasma mini" onClick={onVoltar}>Voltar</button></Cabecalho>
+          <main className="wrap conteudo estreito stack-lg">
+            <div className="stack">
+              <span className="sobretitulo">Estratégia</span>
+              <h1>{cliente.nome}</h1>
+              <p className="suave">Tudo aqui entra nos roteiros. O cliente vê o branding, as editorias e os formatos como lembrete, sem poder editar.</p>
+            </div>
+
+            <section className="cartao"><div className="cartao-corpo stack">
+              <h2>Plano de ação</h2>
+              <p className="suave peq">Cole o plano de ação do cliente. A IA organiza o branding, as editorias, os formatos e os produtos nos campos abaixo para você revisar.</p>
+              <textarea rows="10" value={e.planoDeAcao} placeholder="Cole aqui o plano de ação completo" onChange={(ev) => setE({ ...e, planoDeAcao: ev.target.value })} />
+              <div className="entre">
+                <span className="dica num">{(e.planoDeAcao || '').length.toLocaleString('pt-BR')} de 60.000 caracteres</span>
+                <button className="btn" onClick={organizar} disabled={organizando || (e.planoDeAcao || '').trim().length < 200}>
+                  {organizando ? <><span className="girando" /> Lendo o plano...</> : 'Organizar com IA'}
+                </button>
+              </div>
+              {pendencias.length > 0 && <div className="aviso">A IA deixou {pendencias.length} trecho(s) com cara de IA: {pendencias.map((p) => `"${p.trecho}"`).join(', ')}. Ajuste antes de salvar.</div>}
+            </div></section>
+
+            <section className="cartao"><div className="cartao-corpo stack">
+              <h2>Branding</h2>
+              <div><label htmlFor="b-pos">Posicionamento</label><textarea id="b-pos" rows="2" value={b.posicionamento} onChange={mudarB('posicionamento')} /></div>
+              <div><label htmlFor="b-prom">Promessa</label><textarea id="b-prom" rows="2" value={b.promessa} onChange={mudarB('promessa')} /></div>
+              <div><label htmlFor="b-pers">Personalidade</label><input id="b-pers" value={b.personalidade} onChange={mudarB('personalidade')} /></div>
+              <div><label htmlFor="b-val">Valores</label><Etiquetas id="b-val" valor={b.valores} max={15} placeholder="Ex.: ingrediente de verdade" onChange={(v) => setE({ ...e, branding: { ...b, valores: v } })} /></div>
+              <div><label htmlFor="b-nao">A marca não faz / não fala</label><Etiquetas id="b-nao" valor={b.naoFazer} max={20} placeholder="Ex.: prometer prazo que não cumpre" onChange={(v) => setE({ ...e, branding: { ...b, naoFazer: v } })} /></div>
+            </div></section>
+
+            <section className="cartao"><div className="cartao-corpo stack">
+              <h2>Editorias</h2>
+              {e.editorias.map((x, i) => (
+                <div className="produto" key={i}>
+                  <div className="entre"><span className="sobretitulo">Editoria {i + 1}</span><button type="button" className="btn texto peq" onClick={() => setE({ ...e, editorias: e.editorias.filter((_, j) => j !== i) })}>Remover</button></div>
+                  <div className="duas">
+                    <div><label>Nome</label><input value={x.nome} onChange={(ev) => setE({ ...e, editorias: e.editorias.map((y, j) => (j === i ? { ...y, nome: ev.target.value } : y)) })} /></div>
+                    <div><label>Pilar</label>
+                      <select value={x.pilar || ''} onChange={(ev) => setE({ ...e, editorias: e.editorias.map((y, j) => (j === i ? { ...y, pilar: ev.target.value } : y)) })}>
+                        <option value="">Qualquer</option><option value="P1">P1 · Demanda</option><option value="P2">P2 · Venda</option><option value="P3">P3 · Fidelização</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div><label>Descrição</label><input value={x.descricao || ''} onChange={(ev) => setE({ ...e, editorias: e.editorias.map((y, j) => (j === i ? { ...y, descricao: ev.target.value } : y)) })} /></div>
+                </div>
+              ))}
+              {e.editorias.length < 20 && <button type="button" className="btn" onClick={() => setE({ ...e, editorias: [...e.editorias, { nome: '', descricao: '', pilar: '' }] })}>Adicionar editoria</button>}
+            </div></section>
+
+            <section className="cartao"><div className="cartao-corpo stack">
+              <h2>Formatos prioritários</h2>
+              <div className="chips">
+                {Object.entries(FORMATOS).map(([id, nome]) => {
+                  const on = e.formatosPrioritarios.includes(id);
+                  return <button type="button" key={id} className={'chip-escolha' + (on ? ' ativo' : '')} aria-pressed={on}
+                    onClick={() => setE({ ...e, formatosPrioritarios: on ? e.formatosPrioritarios.filter((f) => f !== id) : [...e.formatosPrioritarios, id] })}>{nome}</button>;
+                })}
+              </div>
+              <div><label htmlFor="obs-f">Observação sobre formatos</label><input id="obs-f" placeholder="Ex.: reels 3x por semana, talking head na cozinha" value={e.observacaoFormatos} onChange={(ev) => setE({ ...e, observacaoFormatos: ev.target.value })} /></div>
+            </div></section>
+
+            <section className="cartao"><div className="cartao-corpo stack">
+              <h2>Produtos</h2>
+              <p className="suave peq">Os mesmos do perfil do cliente. O que você mudar aqui aparece para ele também.</p>
+              {sugeridos && (
+                <div className="aviso stack">
+                  <span>A IA encontrou {sugeridos.length} produto(s) no plano: {sugeridos.map((p) => p.nome).join(', ')}.</span>
+                  <div className="linha">
+                    <button className="btn mini" onClick={() => { setProd({ produtos: sugeridos }); setSugeridos(null); }}>Usar estes</button>
+                    <button className="btn mini" onClick={() => { setProd({ produtos: [...limparProdutos(prod.produtos), ...sugeridos] }); setSugeridos(null); }}>Somar aos atuais</button>
+                    <button className="btn mini fantasma" onClick={() => setSugeridos(null)}>Ignorar</button>
+                  </div>
+                </div>
+              )}
+              <CamposProdutos d={prod} set={setProd} />
+            </div></section>
+
+            <section className="cartao"><div className="cartao-corpo stack">
+              <div className="entre"><h2>Foco de {nomeDoMesRef(mesReferencia())}</h2><button className="btn mini" onClick={() => setTela('foco')}>{foco ? 'Editar' : 'Definir'}</button></div>
+              {foco === null && <p className="suave">O cliente ainda não definiu o foco deste mês.</p>}
+              {foco && <p className="suave">{[foco.produtoFoco, foco.objetivo].filter(Boolean).join(' · ')}{fc ? ` · Campanha: ${fc.nome}` : ''}</p>}
+            </div></section>
+
+            {erro && <div className="erro" role="alert">{erro}</div>}
+            <div className="barra-acoes">
+              <button className="btn" onClick={onVoltar} disabled={salvando}>Cancelar</button>
+              <button className="btn primario" onClick={salvar} disabled={salvando}>{salvando ? <><span className="girando" /> Salvando...</> : 'Salvar estratégia'}</button>
+            </div>
+          </main>
+        </>
+      );
+    }
+
     function InicioCliente({ cliente }) {
       const dna = useDna(cliente.id);
       const [tela, setTela] = useState('inicio');
       const [roteiroId, setRoteiroId] = useState(null);
       const abrir = (id) => { setRoteiroId(id); setTela('roteiro'); window.scrollTo(0, 0); };
+      const estrategia = useDoc(`clientes/${cliente.id}/estrategia/atual`);
+      const foco = useDoc(`clientes/${cliente.id}/focos/${mesReferencia()}`);
 
       if (dna === undefined) return <Carregando />;
       const falta = faltandoNoDna(dna);
       if (!dna?.onboardingConcluido) return <Onboarding uid={cliente.id} cliente={cliente} dna={dna} />;
       if (tela === 'perfil') return <MeuPerfil uid={cliente.id} dna={dna} onVoltar={() => setTela('inicio')} />;
-      if (tela === 'criar' && !falta.length) return <CriarRoteiro dna={dna} onPronto={abrir} onVoltar={() => setTela('inicio')} />;
+      if (tela === 'foco') return <FormFoco uid={cliente.id} produtos={limparProdutos(dna?.produtos)} quem="cliente" onVoltar={() => setTela('inicio')} />;
+      if (tela === 'criar' && !falta.length) return <CriarRoteiro dna={dna} estrategia={estrategia} onPronto={abrir} onVoltar={() => setTela('inicio')} />;
       if (tela === 'roteiro') return <VerRoteiro uid={cliente.id} id={roteiroId} onVoltar={() => setTela('inicio')} onAbrir={abrir} />;
 
       return (
@@ -1998,7 +2461,9 @@
                 </div>
               </div>
             </div>
+            <CartaoFoco foco={foco} onEditar={() => setTela('foco')} />
             <RoteirosRecentes uid={cliente.id} onAbrir={abrir} />
+            <LembreteMarca estrategia={estrategia} />
             <GuiaDeTeste crescimento={cliente.crescimento} />
           </main>
         </>

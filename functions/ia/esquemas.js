@@ -79,6 +79,14 @@ const ESQUEMAS = {
 
 const temas = obj({ temas: arr(obj({ tema: str, porQue: str })) });
 
+const estrategia = obj({
+  branding: obj({ posicionamento: str, promessa: str, personalidade: str, valores: arr(str), naoFazer: arr(str) }),
+  editorias: arr(obj({ nome: str, descricao: str, pilar: { type: 'string', enum: ['P1', 'P2', 'P3', ''] } })),
+  formatosPrioritarios: arr({ type: 'string', enum: Object.keys(cat.FORMATOS) }),
+  observacaoFormatos: str,
+  produtos: arr(obj({ nome: str, descricao: str, preco: str, paraQuem: str })),
+});
+
 // Palavras faladas ÷ 2,5 por segundo.
 function duracaoEstimadaSeg(conteudo) {
   if (!Array.isArray(conteudo?.blocos)) return null;
@@ -117,4 +125,4 @@ function validarConteudo(formato, c) {
   return p;
 }
 
-module.exports = { ESQUEMAS, temas, duracaoEstimadaSeg, validarConteudo, TIPOS_BLOCO, FRAMES_INTERACAO };
+module.exports = { ESQUEMAS, temas, estrategia, duracaoEstimadaSeg, validarConteudo, TIPOS_BLOCO, FRAMES_INTERACAO };

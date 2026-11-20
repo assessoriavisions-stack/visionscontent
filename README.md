@@ -102,6 +102,20 @@ e do cabeçalho. Logo em `assets/logo-visions.png`.
 - Tela do roteiro: fala, "mostrar" e "texto na tela" em cores diferentes, trechos com cara de IA
   sublinhados, copiar roteiro/legenda/gancho.
 
+## Estratégia, produtos e foco do mês
+
+- **Estratégia** (`clientes/{uid}/estrategia/atual`, só o admin escreve): plano de ação colado,
+  branding (posicionamento, promessa, personalidade, valores, o que não faz), editorias e formatos
+  prioritários. "Organizar com IA" (`adminExtrairEstrategia`) preenche os campos a partir do plano
+  para o admin revisar. O cliente vê como lembrete na tela inicial.
+- **Produtos** (`dna/atual.produtos`): passo do onboarding e "Meu perfil"; o admin também edita.
+  Pelo menos 1 produto é obrigatório para gerar.
+- **Foco do mês** (`clientes/{uid}/focos/AAAA-MM`): produto em destaque, objetivo e campanha ativa
+  com mecânica, regras, datas, como participar e CTA. Não bloqueia: sem foco a tela inicial lembra.
+  Vem pré-preenchido com o mês anterior. Campanha passada da data de fim sai dos roteiros sozinha.
+- No prompt, a parte fixa do cliente (perfil, voz, produtos, estratégia, plano) vai em cache entre
+  gerações; o foco do mês e as escolhas do conteúdo vão na parte variável.
+
 ## Rodar local e testar
 
 ```bash

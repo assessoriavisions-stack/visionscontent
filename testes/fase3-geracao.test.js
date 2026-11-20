@@ -30,7 +30,7 @@ const negado = (p, codigo = 'permission-denied') =>
 const DNA = {
   negocio: { oQueFaz: 'Bolos de pote', paraQuem: 'Mães que fazem festa em casa', destinoVenda: 'whatsapp' },
   tom: { eixos: { tecnicoProximo: 4, serioIrreverente: 3, formalInformal: 5, calmoIntenso: 2 }, exemplosReais: ['x'.repeat(60), 'y'.repeat(60), 'z'.repeat(60)], perfilDeVozExtraido: 'Ritmo: rápido.' },
-  expressoesQueUsa: ['gente'], palavrasProibidas: ['gourmet'], temaPrincipal: 'Confeitaria', subtemas: ['forno', 'preço'], onboardingConcluido: true,
+  produtos: [{ nome: 'Kit festa 30 potes', preco: 'R$ 270' }], expressoesQueUsa: ['gente'], palavrasProibidas: ['gourmet'], temaPrincipal: 'Confeitaria', subtemas: ['forno', 'preço'], onboardingConcluido: true,
 };
 const BASE = { formato: 'reels', pilar: 'P1', estilo: 'analise', angulo: 'erro_comum', tema: 'bolo que murcha', framework: 'AIDA', formatoVisual: 'talking_head', cta: 'enviar', estiloLegenda: 'explicativa' };
 

@@ -18,6 +18,7 @@ function faltandoNoDna(dna) {
   if (!n.oQueFaz?.trim()) f.push('o que você faz');
   if (!n.paraQuem?.trim()) f.push('para quem');
   if (!DESTINOS_VENDA.includes(n.destinoVenda)) f.push('onde a venda acontece');
+  if (!(dna?.produtos || []).some((p) => p?.nome?.trim())) f.push('pelo menos 1 produto');
   const eixos = dna?.tom?.eixos || {};
   for (const k of ['tecnicoProximo', 'serioIrreverente', 'formalInformal', 'calmoIntenso']) {
     if (!(eixos[k] >= 1 && eixos[k] <= 5)) { f.push('os eixos do tom'); break; }

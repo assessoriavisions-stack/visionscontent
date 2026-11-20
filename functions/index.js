@@ -15,6 +15,10 @@ exports.resetarContadorMensal = admin.resetarContadorMensal;
 const dna = require('./dna');
 exports.extrairPerfilDeVoz = dna.extrairPerfilDeVoz;
 
+// Estratégia do cliente (admin)
+const estrategia = require('./estrategia');
+exports.adminExtrairEstrategia = estrategia.adminExtrairEstrategia;
+
 // Fase 3: geração
 const roteiros = require('./roteiros');
 exports.sugerirTemas = roteiros.sugerirTemas;

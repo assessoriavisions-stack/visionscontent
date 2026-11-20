@@ -52,10 +52,36 @@ const DNA = {
       'Evitar: palavras de catálogo e frases formais.',
     ].join('\n'),
   },
+  produtos: [
+    { nome: 'Kit festa 30 potes', preco: 'R$ 270', descricao: '30 bolos de pote sortidos, entrega no mesmo dia', paraQuem: 'festas de até 30 pessoas' },
+    { nome: 'Bolo de pote avulso', preco: 'R$ 12', descricao: 'sabores da semana', paraQuem: 'quem quer um doce no dia a dia' },
+  ],
   expressoesQueUsa: ['gente', 'olha só', 'bora'],
   palavrasProibidas: ['gourmet'],
   temaPrincipal: 'Confeitaria caseira que vende',
   subtemas: ['forno e massa', 'precificação', 'bastidores da produção', 'encomendas de festa'],
+};
+const ESTRATEGIA = {
+  branding: {
+    posicionamento: 'A confeitaria de bairro que resolve a festa de quem não tem tempo de cozinhar.',
+    promessa: 'Festa resolvida com doce caseiro e entrega no mesmo dia.',
+    personalidade: 'Próxima, bem-humorada, prática.',
+    valores: ['ingrediente de verdade', 'pontualidade'],
+    naoFazer: ['falar difícil', 'prometer prazo que não cumpre'],
+  },
+  editorias: [
+    { nome: 'Bastidores da cozinha', descricao: 'Produção real, erros e acertos.', pilar: 'P3' },
+    { nome: 'Festa sem estresse', descricao: 'Dicas para mães organizarem a festa.', pilar: 'P1' },
+    { nome: 'Kit festa', descricao: 'Oferta e prova social do kit.', pilar: 'P2' },
+  ],
+  formatosPrioritarios: ['reels', 'carrossel'],
+  observacaoFormatos: 'Reels 3 vezes por semana, talking head na cozinha.',
+  planoDeAcao: '',
+};
+const FOCO = {
+  produtoFoco: 'Kit festa 30 potes',
+  objetivo: 'Vender 40 kits para as festas de fim de ano.',
+  campanha: { ativa: true, nome: 'Natal sem estresse', oferta: 'Frete grátis em Campinas', mecanica: 'Quem fechar o kit até dia 10 de dezembro ganha 5 potes extras.', regras: 'Pedidos com 48h de antecedência.', inicio: '2026-11-15', fim: '2099-12-10', comoParticipar: 'Chamar no WhatsApp com a palavra NATAL', cta: 'Chama no WhatsApp com a palavra NATAL' },
 };
 const PADROES = [...padroesBase, { id: 'cliente_proibida_0', tipo: 'termo', valor: 'gourmet', ativo: true, descricao: 'palavra proibida do perfil' }];
 
@@ -85,7 +111,7 @@ const COMBOS = [
 async function rodar(i, combo, ganchosRecentes) {
   const escolhas = { ...combo, framework: cat.frameworkSugerido(combo.pilar, combo.estilo), formatoVisual: combo.formatoVisual || null, estiloLegenda: combo.estiloLegenda || null };
   const serie = combo.formato === 'serie' ? 'Esta é a parte 1. Defina o nome da série e quantas partes ela terá. Termine puxando a parte 2.' : null;
-  const prompt = montarPromptRoteiro({ dna: DNA, escolhas, padroes: PADROES, aprendizados: { vencedor: null, diagnosticos: [], melhores: [] }, ganchosRecentes, campanha: null, serie });
+  const prompt = montarPromptRoteiro({ dna: DNA, escolhas, padroes: PADROES, aprendizados: { vencedor: null, diagnosticos: [], melhores: [] }, ganchosRecentes, campanha: null, serie, estrategia: ESTRATEGIA, foco: FOCO });
   const inicio = Date.now();
   const r = await gerarComDuracao({ escolhas, prompt, padroes: PADROES });
   const segundos = Math.round((Date.now() - inicio) / 1000);

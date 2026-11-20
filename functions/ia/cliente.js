@@ -27,7 +27,8 @@ async function gerarTexto({ chave, system, mensagens, maxTokens = 8000, effort =
   if (MODO_FALSO()) {
     const fn = respostasFalsas.get(chave);
     if (!fn) throw new Error(`Sem resposta falsa registrada para "${chave}"`);
-    const r = await fn({ system, mensagens });
+    const textoSystem = Array.isArray(system) ? system.map((b) => b.text).join('\n\n') : system;
+    const r = await fn({ system: textoSystem, mensagens });
     return typeof r === 'string' ? r : JSON.stringify(r);
   }
 
