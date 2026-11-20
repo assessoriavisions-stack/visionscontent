@@ -37,6 +37,8 @@ testes/                    teste ponta a ponta contra os emuladores
 
 ## Functions da Fase 1
 
+Admin = custom claim `admin: true` **ou** documento `admins/{uid}` criado no Console.
+
 | Function | Tipo | O que faz |
 |---|---|---|
 | `adminCriarCliente` | callable (admin) | cria login com senha provisória e `clientes/{uid}` |
@@ -54,33 +56,18 @@ Toda callable de cliente usa `callableCliente()`, que checa login, `status === "
 
 ## Configuração inicial (uma vez)
 
-Projeto Firebase: `visionscontent-cba52` (reaproveitado do sistema antigo, plano Blaze).
+Projeto Firebase: `visionscontent-cba52`. Passo a passo completo para Mac, sem `gcloud`:
+**[GUIA-DEPLOY.md](GUIA-DEPLOY.md)**.
 
-1. **Config web:** no Console, Configurações do projeto > Seus apps > Configuração do SDK.
-   Cole `apiKey`, `messagingSenderId` e `appId` em `FIREBASE_CONFIG` no `index.html`
-   (esses valores são públicos; a segurança vem das regras e das functions).
-2. **Authentication:** confirme que o login por E-mail/senha está ativo.
-3. **Limpar o sistema antigo** (apaga TODOS os usuários do Auth e TODAS as coleções do Firestore):
-   ```bash
-   gcloud auth application-default login
-   cd functions && npm install
-   node scripts/limparProjeto.js --confirmar visionscontent-cba52
-   ```
-4. **Deploy do backend** (regras do Firestore + functions). Se o projeto antigo tinha outras
-   functions, o CLI vai perguntar se quer apagá-las: responda que sim.
-   ```bash
-   firebase deploy --only firestore:rules,functions
-   ```
-5. **Primeiro admin:**
-   ```bash
-   cd functions && node scripts/definirAdmin.js seu@email.com SenhaInicial123
-   ```
-6. **Frontend:** publique a raiz do repositório no Netlify. Ao entrar como admin, toque em
-   **Criar agora** no aviso de configurações iniciais (ou rode `node scripts/seed.js`).
-7. **Chave da Anthropic** (usada a partir da Fase 2), no Secret Manager:
-   `firebase functions:secrets:set ANTHROPIC_API_KEY`.
+Resumo: `firebase login`, apagar o Firestore antigo (`firebase firestore:delete --all-collections`),
+`firebase deploy --only firestore:rules,functions`, criar o login no Console e marcar como admin
+com um documento `admins/{uid}` (só o Console consegue criar), e desligar a inscrição aberta no Auth.
 
-Os scripts de `functions/scripts/` usam o projeto do `.firebaserc` (ou `GOOGLE_CLOUD_PROJECT`, se definido).
+Alternativa por linha de comando (exige credencial do projeto): `functions/scripts/definirAdmin.js`
+(custom claim) e `functions/scripts/limparProjeto.js` (apaga Auth + Firestore).
+
+A chave da Anthropic (a partir da Fase 2) vai no Secret Manager:
+`firebase functions:secrets:set ANTHROPIC_API_KEY`.
 
 ## Visual
 

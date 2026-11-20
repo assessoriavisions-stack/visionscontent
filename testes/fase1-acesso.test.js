@@ -121,6 +121,25 @@ test('fluxo completo de acesso e bloqueio', async (t) => {
     assert.equal(dna.data().temaPrincipal, 'confeitaria');
   });
 
+  await t.test('admin marcado por documento admins/{uid} (Console)', async () => {
+    const u = await admin.auth().createUser({ email: 'console@visions.test', password: 'senha-console-1' });
+    const D = novoApp();
+    await signInWithEmailAndPassword(D.auth, 'console@visions.test', 'senha-console-1');
+    // Sem o documento: não é admin.
+    await negado(D.chamar('adminBloquearCliente', { uid }));
+    await negado(getDoc(doc(D.db, 'clientes', uid)));
+    // Ninguém consegue se marcar como admin pelo app.
+    await negado(setDoc(doc(D.db, 'admins', u.uid), { nome: 'eu' }));
+    // Marcado pelo Console (Admin SDK simula isso).
+    await admin.firestore().doc(`admins/${u.uid}`).set({ email: 'console@visions.test' });
+    assert.ok((await getDoc(doc(D.db, 'admins', u.uid))).exists());
+    assert.equal((await getDoc(doc(D.db, 'clientes', uid))).data().nome, 'Ana Teste');
+    await D.chamar('adminAtualizarCliente', { uid, limiteGeracoesMes: 40 });
+    // Cliente não lê o documento de admin de outra pessoa.
+    await negado(getDoc(doc(C.db, 'admins', u.uid)));
+    await deleteApp(D.app);
+  });
+
   await deleteApp(C.app);
   await deleteApp(A.app);
 });

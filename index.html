@@ -848,6 +848,13 @@
             return;
           }
           if (token.claims.admin === true) return setEstado({ fase: 'admin', usuario: u });
+          // Admin marcado pelo Console (documento admins/{uid}).
+          try {
+            const adm = await db.doc(`admins/${u.uid}`).get();
+            if (adm.exists) return setEstado({ fase: 'admin', usuario: u });
+          } catch {
+            // Sem permissão ou sem rede: segue como cliente.
+          }
 
           // Cliente: escuta o próprio documento. Se o status mudar ou a leitura for negada, sai.
           pararCliente = db.doc(`clientes/${u.uid}`).onSnapshot(

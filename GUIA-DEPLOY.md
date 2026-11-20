@@ -1,0 +1,73 @@
+# Guia de instalação (Mac) · Plataforma de Roteiros Visions
+
+Projeto Firebase: `visionscontent-cba52`. Não precisa de `gcloud`.
+
+## 1. Preparar o Mac (uma vez só)
+
+1. Instale o **Node.js**: entre em https://nodejs.org, baixe a versão **LTS** e rode o instalador.
+2. Abra o **Terminal** e confira (deve aparecer um número de versão):
+   ```bash
+   node -v
+   ```
+3. Instale a ferramenta do Firebase (vai pedir a senha do Mac; ao digitar, nada aparece na tela, é normal):
+   ```bash
+   sudo npm install -g firebase-tools
+   ```
+4. Entre na sua conta Google do Firebase (abre o navegador):
+   ```bash
+   firebase login
+   ```
+
+## 2. Baixar o código
+
+1. Abra no navegador (logado no GitHub):
+   https://github.com/assessoriavisions-stack/visionscontent/archive/refs/heads/claude/amazing-brown-acqexb.zip
+2. Dê dois cliques no ZIP baixado para descompactar.
+3. No Terminal, entre na pasta:
+   ```bash
+   cd ~/Downloads/visionscontent-claude-amazing-brown-acqexb
+   ```
+
+## 3. Apagar os dados do sistema antigo
+
+1. Apagar todo o Firestore (vai pedir confirmação):
+   ```bash
+   firebase firestore:delete --all-collections --project visionscontent-cba52
+   ```
+2. Apagar os usuários antigos: no Console do Firebase, **Authentication > Usuários**,
+   marque todos e apague.
+
+## 4. Publicar o backend (regras + functions)
+
+```bash
+cd functions && npm install && cd ..
+```
+```bash
+firebase deploy --only firestore:rules,functions --project visionscontent-cba52
+```
+- Na primeira vez o Firebase pode pedir para ativar APIs: responda **Y**.
+- Se aparecer a pergunta para apagar functions antigas (do sistema anterior): responda **Y**.
+
+## 5. Criar o seu login de admin (pelo Console)
+
+1. **Authentication > Usuários > Adicionar usuário**: seu e-mail e uma senha.
+2. Copie o **UID do usuário** que aparece na lista.
+3. **Firestore Database > Iniciar coleção**:
+   - ID da coleção: `admins`
+   - ID do documento: cole o **UID**
+   - Campo: `email` (string) com o seu e-mail. Salve.
+
+Esse documento só pode ser criado pelo Console: ninguém consegue se tornar admin pelo app.
+
+## 6. Fechar o cadastro aberto
+
+**Authentication > Configurações > Ações do usuário**: desmarque **Ativar criação (inscrição)**.
+Assim só o admin cria logins (pelo painel da plataforma).
+
+## 7. Config web e site
+
+1. **Configurações do projeto > Seus apps > Configuração do SDK**: copie `apiKey`,
+   `messagingSenderId` e `appId` para o `FIREBASE_CONFIG` do `index.html` (ou mande para o Claude).
+2. Publique a pasta no Netlify.
+3. **Authentication > Configurações > Domínios autorizados**: adicione o domínio do Netlify.
+4. Entre no site com o seu login de admin e toque em **Criar agora** no aviso de configurações iniciais.

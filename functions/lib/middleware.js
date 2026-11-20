@@ -11,9 +11,16 @@ function exigirLogin(request) {
   return request.auth.uid;
 }
 
-function exigirAdmin(request) {
+// Admin = custom claim admin: true OU documento admins/{uid} (criado à mão no Console do Firebase).
+async function ehAdmin(auth) {
+  if (!auth) return false;
+  if (auth.token.admin === true) return true;
+  return (await db.doc(`admins/${auth.uid}`).get()).exists;
+}
+
+async function exigirAdmin(request) {
   exigirLogin(request);
-  if (request.auth.token.admin !== true) {
+  if (!(await ehAdmin(request.auth))) {
     throw new HttpsError('permission-denied', 'Só o administrador da Visions pode fazer isso.');
   }
   return request.auth.uid;
@@ -91,7 +98,7 @@ function envolver(handler) {
 
 function callableAdmin(handler, opcoes = {}) {
   return onCall({ ...OPCOES_PADRAO, ...opcoes }, envolver(async (request) => {
-    exigirAdmin(request);
+    await exigirAdmin(request);
     return handler(request);
   }));
 }
@@ -108,6 +115,7 @@ module.exports = {
   OPCOES_PADRAO,
   exigirLogin,
   exigirAdmin,
+  ehAdmin,
   exigirClienteAtivo,
   bloquearCliente,
   registrarGeracao,
