@@ -1,6 +1,7 @@
 // Dá o papel de admin (custom claim admin: true) a um usuário existente no Auth.
 // Se o e-mail ainda não tem login, cria com a senha informada.
 // Uso: node scripts/definirAdmin.js email@dominio.com [senhaInicial]
+require('./_projeto');
 const { auth } = require('../lib/firebase');
 
 async function main() {

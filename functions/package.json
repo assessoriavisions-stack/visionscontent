@@ -6,6 +6,7 @@
   "scripts": {
     "seed": "node scripts/seed.js",
     "definir-admin": "node scripts/definirAdmin.js",
+    "limpar-projeto": "node scripts/limparProjeto.js",
     "test": "node --test test/"
   },
   "dependencies": {

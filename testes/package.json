@@ -1,9 +1,9 @@
 {
-  "name": "visions-roteiros-testes",
+  "name": "visionscontent-cba52-testes",
   "private": true,
   "description": "Testes ponta a ponta contra os emuladores do Firebase",
   "scripts": {
-    "test": "cd .. && npx --yes firebase-tools@15 emulators:exec --only auth,firestore,functions --project visions-roteiros 'node --test testes/*.test.js'"
+    "test": "cd .. && npx --yes firebase-tools@15 emulators:exec --only auth,firestore,functions --project visionscontent-cba52 'node --test testes/*.test.js'"
   },
   "devDependencies": {
     "firebase": "^12.19.0",

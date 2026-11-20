@@ -3,11 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#14121a" />
-  <title>Roteiros Visions</title>
+  <meta name="theme-color" content="#F6F3EC" />
+  <meta name="color-scheme" content="light" />
+  <title>Roteiros · Visions Marketing</title>
+  <link rel="icon" type="image/png" href="assets/logo-visions.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 
   <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
@@ -20,118 +22,206 @@
 
   <style>
     :root {
-      --bg: #f6f5f8;
-      --card: #ffffff;
-      --text: #17151c;
-      --muted: #6b6775;
-      --line: #e6e3ec;
-      --accent: #5b3df5;
-      --accent-ink: #ffffff;
-      --accent-soft: #eeeaff;
-      --ok: #1f8a4c;
-      --ok-soft: #e4f5ea;
-      --danger: #c2372b;
-      --danger-soft: #fdeceb;
-      --warn: #a96500;
-      --warn-soft: #fff3df;
-      --radius: 14px;
-      --shadow: 0 1px 2px rgba(20, 18, 26, .06), 0 4px 16px rgba(20, 18, 26, .05);
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #14121a;
-        --card: #1d1a25;
-        --text: #f1eff5;
-        --muted: #a29dad;
-        --line: #2e2a38;
-        --accent: #8b74ff;
-        --accent-ink: #0e0c13;
-        --accent-soft: #2a2442;
-        --ok: #4cc983;
-        --ok-soft: #173325;
-        --danger: #ff7a6e;
-        --danger-soft: #3a1c1a;
-        --warn: #f0b24f;
-        --warn-soft: #3a2b12;
-        --shadow: none;
-      }
+      /* Base */
+      --marfim: #F6F3EC;
+      --superficie: #FFFFFF;
+      --superficie-2: #FBF9F5;
+      --tinta: #0F1A33;
+      --tinta-2: #3B4459;
+      --suave: #7A7F8E;
+      --linha: #E8E3D8;
+      --linha-2: #F0ECE3;
+
+      /* Cores da marca (logo) */
+      --vermelho: #DD2A2A;
+      --amarelo: #FFCF51;
+      --azul: #2657A5;
+      --vermelho-claro: #FCECEA;
+      --amarelo-claro: #FFF5DA;
+      --azul-claro: #EBF0F9;
+      --verde: #2E7D5B;
+      --verde-claro: #E6F2EB;
+
+      --serifa: "Fraunces", Georgia, "Times New Roman", serif;
+      --sans: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+      --raio: 18px;
+      --raio-sm: 12px;
+      --sombra: 0 1px 0 rgba(15, 26, 51, .03), 0 18px 40px -22px rgba(15, 26, 51, .22);
+      --sombra-leve: 0 1px 2px rgba(15, 26, 51, .05);
+      --faixa: linear-gradient(90deg, var(--vermelho) 0 45%, var(--amarelo) 45% 70%, var(--azul) 70% 100%);
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; }
     body {
-      background: var(--bg);
-      color: var(--text);
-      font: 16px/1.5 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--marfim);
+      color: var(--tinta);
+      font: 15px/1.55 var(--sans);
       -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
       min-height: 100vh;
     }
     button, input, select, textarea { font: inherit; color: inherit; }
-    .wrap { max-width: 960px; margin: 0 auto; padding: 16px 16px calc(32px + env(safe-area-inset-bottom)); }
-    .center { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
-    .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; }
-    .stack > * + * { margin-top: 14px; }
-    h1, h2, h3 { margin: 0; line-height: 1.25; }
-    h1 { font-size: 22px; font-weight: 700; }
-    h2 { font-size: 18px; font-weight: 600; }
-    .muted { color: var(--muted); }
-    .small { font-size: 14px; }
-    .marca { font-weight: 700; letter-spacing: -.01em; }
-    .marca span { color: var(--accent); }
+    ::selection { background: var(--amarelo); color: var(--tinta); }
 
-    label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; }
-    .hint { font-size: 13px; color: var(--muted); margin-top: 4px; }
-    input, select, textarea {
-      width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line);
-      background: var(--bg); outline: none; min-height: 46px;
-    }
-    input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    h1, h2, h3 { margin: 0; font-family: var(--serifa); font-weight: 500; letter-spacing: -.015em; line-height: 1.15; font-variation-settings: "opsz" 72; }
+    h1 { font-size: clamp(28px, 6vw, 36px); }
+    h2 { font-size: 22px; }
+    h3 { font-size: 19px; }
+    p { margin: 0; }
+    .suave { color: var(--suave); }
+    .peq { font-size: 13px; }
+    .sobretitulo { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--suave); }
+    .num { font-variant-numeric: tabular-nums; }
 
-    .btn {
-      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-      padding: 11px 16px; min-height: 44px; border-radius: 10px; border: 1px solid var(--line);
-      background: var(--card); cursor: pointer; font-weight: 600; font-size: 15px; white-space: nowrap;
-    }
-    .btn:disabled { opacity: .55; cursor: default; }
-    .btn.primario { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-    .btn.perigo { color: var(--danger); border-color: var(--danger-soft); background: var(--danger-soft); }
-    .btn.ok { color: var(--ok); border-color: var(--ok-soft); background: var(--ok-soft); }
-    .btn.link { background: none; border: none; color: var(--accent); padding: 4px 0; min-height: 0; }
-    .btn.full { width: 100%; }
-    .btn.peq { padding: 7px 12px; min-height: 36px; font-size: 14px; }
+    .faixa { height: 3px; background: var(--faixa); }
+    .faixa.fina { height: 2px; }
 
-    .erro { background: var(--danger-soft); color: var(--danger); padding: 10px 12px; border-radius: 10px; font-size: 14px; }
-    .aviso { background: var(--warn-soft); color: var(--warn); padding: 12px 14px; border-radius: 10px; font-size: 14px; }
-
-    .topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0 16px; }
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+    .stack > * + * { margin-top: 16px; }
+    .stack-lg > * + * { margin-top: 28px; }
     .linha { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
     .entre { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .grade { display: grid; gap: 12px; grid-template-columns: 1fr; }
-    @media (min-width: 720px) { .grade { grid-template-columns: 1fr 1fr; } }
-    .dupla { display: grid; gap: 14px; grid-template-columns: 1fr; }
-    @media (min-width: 520px) { .dupla { grid-template-columns: 1fr 1fr; } }
 
-    .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-    .badge.ativo { background: var(--ok-soft); color: var(--ok); }
-    .badge.bloqueado { background: var(--danger-soft); color: var(--danger); }
-    .badge.alerta { background: var(--warn-soft); color: var(--warn); }
+    .cartao {
+      background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio);
+      box-shadow: var(--sombra); overflow: hidden;
+    }
+    .cartao-corpo { padding: 22px; }
+    @media (min-width: 560px) { .cartao-corpo { padding: 28px; } }
 
-    .dados { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 14px; margin: 12px 0; }
-    .dados dt { color: var(--muted); }
-    .dados dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
-    .barra { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; margin-top: 6px; }
-    .barra > i { display: block; height: 100%; background: var(--accent); }
+    /* Campos */
+    label { display: block; font-size: 13px; font-weight: 500; color: var(--tinta-2); margin-bottom: 7px; }
+    .dica { font-size: 12.5px; color: var(--suave); margin-top: 6px; }
+    input, select, textarea {
+      width: 100%; padding: 12px 14px; min-height: 48px; border-radius: var(--raio-sm);
+      border: 1px solid var(--linha); background: var(--superficie); outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    input::placeholder { color: #A8ABB6; }
+    input:hover, select:hover { border-color: #D8D2C4; }
+    input:focus, select:focus, textarea:focus { border-color: var(--azul); box-shadow: 0 0 0 4px var(--azul-claro); }
+    input:disabled { background: var(--superficie-2); color: var(--suave); }
+
+    /* Botões */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 11px 18px; min-height: 46px; border-radius: var(--raio-sm);
+      border: 1px solid var(--linha); background: var(--superficie); cursor: pointer;
+      font-weight: 500; font-size: 14.5px; white-space: nowrap; letter-spacing: .005em;
+      transition: transform .12s, box-shadow .15s, background .15s, border-color .15s;
+    }
+    .btn:hover:not(:disabled) { border-color: #D3CCBC; box-shadow: var(--sombra-leve); }
+    .btn:active:not(:disabled) { transform: translateY(1px); }
+    .btn:disabled { opacity: .5; cursor: default; }
+    .btn:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--azul-claro); }
+    .btn.primario { background: var(--tinta); border-color: var(--tinta); color: var(--marfim); }
+    .btn.primario:hover:not(:disabled) { background: #1B2846; box-shadow: 0 8px 20px -10px rgba(15, 26, 51, .55); }
+    .btn.perigo { color: var(--vermelho); }
+    .btn.perigo:hover:not(:disabled) { background: var(--vermelho-claro); border-color: #F4CFCB; }
+    .btn.positivo { color: var(--verde); }
+    .btn.positivo:hover:not(:disabled) { background: var(--verde-claro); border-color: #C9E2D3; }
+    .btn.fantasma { background: transparent; border-color: transparent; }
+    .btn.fantasma:hover:not(:disabled) { background: rgba(15, 26, 51, .05); box-shadow: none; }
+    .btn.texto { background: none; border: none; padding: 4px 0; min-height: 0; color: var(--azul); font-weight: 500; }
+    .btn.texto:hover { text-decoration: underline; box-shadow: none; }
+    .btn.cheio { width: 100%; }
+    .btn.mini { padding: 7px 13px; min-height: 36px; font-size: 13.5px; }
+
+    .erro { background: var(--vermelho-claro); color: #A61F1F; padding: 11px 14px; border-radius: var(--raio-sm); font-size: 14px; }
+    .aviso { background: var(--amarelo-claro); color: #6B4E00; padding: 14px 16px; border-radius: var(--raio-sm); font-size: 14px; border: 1px solid #F6E3A8; }
+
+    /* Login */
+    .login { min-height: 100vh; display: grid; grid-template-columns: 1fr; align-content: start; }
+    .login-marca { padding: 48px 24px 12px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 22px; }
+    .login-marca img { width: min(260px, 72vw); height: auto; }
+    .login-marca .chamada { display: none; }
+    .login-form { padding: 16px 16px 40px; display: flex; justify-content: center; align-items: flex-start; }
+    .login-form .cartao { width: 100%; max-width: 420px; }
+    @media (min-width: 900px) {
+      .login { grid-template-columns: 1.1fr 1fr; align-content: stretch; }
+      .login-marca { align-items: flex-start; text-align: left; justify-content: center; padding: 64px 72px; border-right: 1px solid var(--linha); background:
+        radial-gradient(1200px 500px at -10% 110%, rgba(38, 87, 165, .07), transparent 60%),
+        radial-gradient(800px 400px at 110% -10%, rgba(255, 207, 81, .12), transparent 60%); }
+      .login-marca img { width: 320px; }
+      .login-marca .chamada { display: block; max-width: 440px; }
+      .login-form { align-items: center; padding: 48px; }
+    }
+    .chamada h1 { font-size: 44px; line-height: 1.08; }
+    .chamada h1 em { font-style: italic; color: var(--azul); }
+
+    /* Cabeçalho */
+    .cabecalho { position: sticky; top: 0; z-index: 20; background: rgba(246, 243, 236, .86); backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px); }
+    .cabecalho .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 68px; }
+    .cabecalho img { height: 38px; width: auto; display: block; }
+    .cabecalho .marca { display: flex; align-items: center; gap: 14px; }
+    .cabecalho .divisor { width: 1px; height: 22px; background: var(--linha); }
+    .conteudo { padding-top: 28px; padding-bottom: calc(48px + env(safe-area-inset-bottom)); }
+
+    /* Indicadores */
+    .indicadores { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .indicador { background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-sm); padding: 14px 14px 12px; position: relative; overflow: hidden; }
+    .indicador::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+    .indicador.v::before { background: var(--azul); }
+    .indicador.r::before { background: var(--vermelho); }
+    .indicador.a::before { background: var(--amarelo); }
+    .indicador .valor { font-family: var(--serifa); font-size: 30px; line-height: 1.1; margin-top: 6px; font-variant-numeric: tabular-nums; }
+    @media (min-width: 720px) { .indicador { padding: 18px 20px 16px; } .indicador .valor { font-size: 36px; } }
+
+    .filtros { display: grid; gap: 10px; grid-template-columns: 1fr; }
+    @media (min-width: 640px) { .filtros { grid-template-columns: 1fr 220px; } }
+
+    /* Clientes */
+    .grade { display: grid; gap: 14px; grid-template-columns: 1fr; }
+    @media (min-width: 760px) { .grade { grid-template-columns: 1fr 1fr; } }
+    .cliente { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .cliente-topo { display: flex; gap: 14px; align-items: center; }
+    .avatar { width: 46px; height: 46px; flex: none; border-radius: 50%; display: grid; place-items: center; font-family: var(--serifa); font-size: 17px; font-weight: 500; }
+    .avatar.c0 { background: var(--azul-claro); color: var(--azul); }
+    .avatar.c1 { background: var(--vermelho-claro); color: var(--vermelho); }
+    .avatar.c2 { background: var(--amarelo-claro); color: #8A6400; }
+    .cliente-nome { min-width: 0; flex: 1; }
+    .cliente-nome h3 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .selo { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 9px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+    .selo::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .selo.ativo { background: var(--verde-claro); color: var(--verde); }
+    .selo.bloqueado { background: var(--vermelho-claro); color: var(--vermelho); }
+    .selo.alerta { background: var(--amarelo-claro); color: #8A6400; }
+    .dados { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13.5px; margin: 0; padding: 14px 0; border-top: 1px solid var(--linha-2); border-bottom: 1px solid var(--linha-2); }
+    .dados dt { color: var(--suave); }
+    .dados dd { margin: 0; text-align: right; overflow-wrap: anywhere; color: var(--tinta-2); }
+    .uso { display: flex; flex-direction: column; gap: 7px; }
+    .barra { height: 4px; background: var(--linha-2); border-radius: 99px; overflow: hidden; }
+    .barra > i { display: block; height: 100%; background: var(--azul); border-radius: 99px; transition: width .4s; }
+    .barra.cheia > i { background: var(--vermelho); }
     .acoes { display: flex; gap: 8px; flex-wrap: wrap; }
 
-    .fundo-modal { position: fixed; inset: 0; background: rgba(10, 8, 14, .5); display: flex; align-items: flex-end; justify-content: center; z-index: 50; }
+    /* Modal (vira folha de baixo no celular) */
+    .fundo-modal { position: fixed; inset: 0; background: rgba(15, 26, 51, .38); backdrop-filter: blur(3px); display: flex; align-items: flex-end; justify-content: center; z-index: 50; animation: surge .18s ease-out; }
     @media (min-width: 560px) { .fundo-modal { align-items: center; padding: 16px; } }
-    .modal { background: var(--card); width: 100%; max-width: 520px; max-height: 92vh; overflow: auto; border-radius: 18px 18px 0 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); }
-    @media (min-width: 560px) { .modal { border-radius: 18px; padding: 24px; } }
+    .modal { background: var(--superficie); width: 100%; max-width: 520px; max-height: 92vh; overflow: auto; border-radius: 22px 22px 0 0; box-shadow: 0 30px 80px -20px rgba(15, 26, 51, .45); animation: sobe .22s cubic-bezier(.2, .8, .2, 1); }
+    .modal .modal-corpo { padding: 22px 18px calc(24px + env(safe-area-inset-bottom)); }
+    @media (min-width: 560px) { .modal { border-radius: 22px; } .modal .modal-corpo { padding: 28px; } }
+    @keyframes surge { from { opacity: 0; } }
+    @keyframes sobe { from { transform: translateY(24px); opacity: 0; } }
+    .duas { display: grid; gap: 16px; grid-template-columns: 1fr; }
+    @media (min-width: 520px) { .duas { grid-template-columns: 1fr 1fr; } }
 
-    .senha { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 20px; letter-spacing: .04em; background: var(--accent-soft); padding: 12px; border-radius: 10px; text-align: center; overflow-wrap: anywhere; }
-    .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 12px 18px; border-radius: 12px; font-size: 14px; z-index: 60; max-width: calc(100% - 32px); }
-    .carregando { display: inline-block; width: 18px; height: 18px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: gira .7s linear infinite; }
+    .credencial { background: var(--superficie-2); border: 1px solid var(--linha); border-radius: var(--raio-sm); padding: 14px 16px; }
+    .credencial .valor { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 17px; margin-top: 4px; overflow-wrap: anywhere; }
+    .credencial.destaque { background: var(--amarelo-claro); border-color: #F6E3A8; }
+    .credencial.destaque .valor { font-size: 22px; letter-spacing: .04em; }
+
+    .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--tinta); color: var(--marfim); padding: 13px 20px; border-radius: 14px; font-size: 14px; z-index: 60; max-width: calc(100% - 32px); box-shadow: 0 16px 40px -12px rgba(15, 26, 51, .5); animation: sobe .2s ease-out; }
+    .girando { display: inline-block; width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: gira .7s linear infinite; }
     @keyframes gira { to { transform: rotate(360deg); } }
-    .vazio { text-align: center; padding: 40px 16px; }
+    .tela-centro { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+    .vazio { text-align: center; padding: 48px 20px; }
+    .vazio h3 { margin-bottom: 6px; }
+
+    /* Boas-vindas do cliente */
+    .boas-vindas { padding: 28px 22px; }
+    @media (min-width: 560px) { .boas-vindas { padding: 40px; } }
+    .boas-vindas h1 em { font-style: italic; color: var(--azul); }
   </style>
 </head>
 <body>
@@ -141,19 +231,22 @@
     const { useState, useEffect, useMemo, useCallback } = React;
 
     // ==========================================================
-    // Configuração do Firebase (preencher com o projeto real)
+    // Configuração do Firebase
+    // Console > Configurações do projeto > Seus apps > Configuração do SDK
+    // (esses valores são públicos por natureza; a segurança vem das regras e das functions)
     // ==========================================================
     const FIREBASE_CONFIG = {
       apiKey: 'PREENCHER',
-      authDomain: 'visions-roteiros.firebaseapp.com',
-      projectId: 'visions-roteiros',
-      storageBucket: 'visions-roteiros.appspot.com',
+      authDomain: 'visionscontent-cba52.firebaseapp.com',
+      projectId: 'visionscontent-cba52',
+      storageBucket: 'visionscontent-cba52.firebasestorage.app',
       messagingSenderId: 'PREENCHER',
       appId: 'PREENCHER',
     };
     const REGIAO_FUNCTIONS = 'southamerica-east1';
     const FUSO = 'America/Sao_Paulo';
     const MSG_SUSPENSO = 'Seu acesso está suspenso. Fale com a Visions.';
+    const LOGO = 'assets/logo-visions.png';
 
     firebase.initializeApp(FIREBASE_CONFIG);
     const auth = firebase.auth();
@@ -163,7 +256,7 @@
     // Rodando local (localhost/127.0.0.1): usa os emuladores do Firebase.
     const EMULADOR = ['localhost', '127.0.0.1'].includes(location.hostname);
     if (EMULADOR) {
-      auth.useEmulator('http://127.0.0.1:9099');
+      auth.useEmulator('http://127.0.0.1:9099', { disableWarnings: true });
       db.useEmulator('127.0.0.1', 8080);
       fns.useEmulator('127.0.0.1', 5001);
     }
@@ -180,6 +273,7 @@
       const codigo = String(e?.code || '').replace(/^functions\//, '');
       const porCodigo = {
         'auth/invalid-credential': 'E-mail ou senha incorretos. Confira e tente de novo.',
+        'auth/invalid-login-credentials': 'E-mail ou senha incorretos. Confira e tente de novo.',
         'auth/wrong-password': 'E-mail ou senha incorretos. Confira e tente de novo.',
         'auth/user-not-found': 'E-mail ou senha incorretos. Confira e tente de novo.',
         'auth/invalid-email': 'Esse e-mail não parece válido.',
@@ -201,6 +295,9 @@
     function mesReferencia(d = new Date()) {
       return new Intl.DateTimeFormat('en-CA', { timeZone: FUSO, year: 'numeric', month: '2-digit' }).format(d);
     }
+    function nomeDoMes(d = new Date()) {
+      return new Intl.DateTimeFormat('pt-BR', { timeZone: FUSO, month: 'long' }).format(d);
+    }
     // Timestamp -> "2026-12-31" no fuso de Brasília (para o input de data)
     function paraISO(ts) {
       if (!ts) return '';
@@ -208,7 +305,7 @@
     }
     function paraBR(ts) {
       if (!ts) return '';
-      return new Intl.DateTimeFormat('pt-BR', { timeZone: FUSO, day: '2-digit', month: '2-digit', year: 'numeric' }).format(ts.toDate());
+      return new Intl.DateTimeFormat('pt-BR', { timeZone: FUSO, day: '2-digit', month: 'short', year: 'numeric' }).format(ts.toDate()).replace('.', '');
     }
     function diasAte(ts) {
       if (!ts) return null;
@@ -217,6 +314,16 @@
     function geracoesDoMes(c) {
       return c.mesReferencia === mesReferencia() ? (c.geracoesNoMes || 0) : 0;
     }
+    function iniciais(nome) {
+      const p = (nome || '?').trim().split(/\s+/);
+      return ((p[0]?.[0] || '') + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
+    }
+    function corDoNome(nome) {
+      let h = 0;
+      for (const ch of nome || '') h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+      return 'c' + (h % 3);
+    }
+    const primeiroNome = (n) => (n || '').trim().split(/\s+/)[0];
 
     async function copiar(texto) {
       try {
@@ -243,28 +350,39 @@
         mostrarToastGlobal = (m) => {
           setMsg(m);
           clearTimeout(timer);
-          timer = setTimeout(() => setMsg(''), 3200);
+          timer = setTimeout(() => setMsg(''), 3400);
         };
       }, []);
       return msg ? <div className="toast" role="status">{msg}</div> : null;
     }
 
-    function Marca() {
-      return <div className="marca">Roteiros <span>Visions</span></div>;
-    }
-
     function Carregando({ texto = 'Carregando...' }) {
       return (
-        <div className="center">
-          <div className="linha muted"><span className="carregando" /> {texto}</div>
+        <div className="tela-centro">
+          <div className="linha suave"><span className="girando" /> {texto}</div>
         </div>
+      );
+    }
+
+    function Cabecalho({ rotulo, children }) {
+      return (
+        <header className="cabecalho">
+          <div className="wrap">
+            <div className="marca">
+              <img src={LOGO} alt="Visions Marketing" />
+              {rotulo && <><span className="divisor" /><span className="sobretitulo">{rotulo}</span></>}
+            </div>
+            <div className="linha">{children}</div>
+          </div>
+          <div className="faixa fina" />
+        </header>
       );
     }
 
     // ==========================================================
     // Login e acesso suspenso
     // ==========================================================
-    function Login({ avisoInicial, onSuspenso }) {
+    function Login({ onSuspenso }) {
       const [email, setEmail] = useState('');
       const [senha, setSenha] = useState('');
       const [erro, setErro] = useState('');
@@ -296,44 +414,68 @@
       }
 
       return (
-        <div className="center">
-          <form className="card stack" style={{ width: '100%', maxWidth: 400 }} onSubmit={entrar} noValidate>
-            <Marca />
-            <div>
-              <h1>Entrar</h1>
-              <p className="muted small" style={{ margin: '4px 0 0' }}>Use o e-mail e a senha que a Visions te enviou.</p>
+        <div className="login">
+          <section className="login-marca">
+            <img src={LOGO} alt="Visions Marketing" />
+            <div className="chamada stack">
+              <span className="sobretitulo">Plataforma de roteiros</span>
+              <h1>Roteiros que soam <em>como você</em>, do gancho à legenda.</h1>
+              <p className="suave">
+                Conteúdo para Instagram com o seu tom de voz e a metodologia da Visions,
+                ajustado a cada post pelos seus próprios resultados.
+              </p>
             </div>
-            {avisoInicial && <div className="aviso">{avisoInicial}</div>}
-            <div>
-              <label htmlFor="email">E-mail</label>
-              <input id="email" type="email" autoComplete="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-            <div>
-              <label htmlFor="senha">Senha</label>
-              <input id="senha" type="password" autoComplete="current-password" value={senha} onChange={(e) => setSenha(e.target.value)} />
-            </div>
-            {erro && <div className="erro" role="alert">{erro}</div>}
-            <button className="btn primario full" disabled={enviando}>
-              {enviando ? <><span className="carregando" /> Entrando...</> : 'Entrar'}
-            </button>
-            <button type="button" className="btn link" onClick={esqueci}>Esqueci minha senha</button>
-            {EMULADOR && <p className="hint">Modo local: conectado aos emuladores do Firebase.</p>}
-          </form>
+          </section>
+
+          <section className="login-form">
+            <form className="cartao" onSubmit={entrar} noValidate>
+              <div className="faixa" />
+              <div className="cartao-corpo stack">
+                <div>
+                  <span className="sobretitulo">Área do cliente</span>
+                  <h2 style={{ marginTop: 6 }}>Entrar</h2>
+                  <p className="suave peq" style={{ marginTop: 6 }}>Use o e-mail e a senha que a Visions te enviou.</p>
+                </div>
+                <div>
+                  <label htmlFor="email">E-mail</label>
+                  <input id="email" type="email" autoComplete="email" inputMode="email" placeholder="voce@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <div>
+                  <div className="entre" style={{ marginBottom: 7 }}>
+                    <label htmlFor="senha" style={{ margin: 0 }}>Senha</label>
+                    <button type="button" className="btn texto peq" onClick={esqueci}>Esqueci minha senha</button>
+                  </div>
+                  <input id="senha" type="password" autoComplete="current-password" value={senha} onChange={(e) => setSenha(e.target.value)} />
+                </div>
+                {erro && <div className="erro" role="alert">{erro}</div>}
+                <button className="btn primario cheio" disabled={enviando}>
+                  {enviando ? <><span className="girando" /> Entrando...</> : 'Entrar'}
+                </button>
+                <p className="dica" style={{ textAlign: 'center' }}>
+                  Acesso exclusivo para clientes da Visions Marketing.
+                  {EMULADOR && ' Modo local: emuladores do Firebase.'}
+                </p>
+              </div>
+            </form>
+          </section>
         </div>
       );
     }
 
     function AcessoSuspenso({ onVoltar }) {
       return (
-        <div className="center">
-          <div className="card stack" style={{ width: '100%', maxWidth: 420, textAlign: 'center' }}>
-            <Marca />
-            <h1>Acesso suspenso</h1>
-            <p className="muted" style={{ margin: 0 }}>
-              Seu acesso à plataforma está suspenso no momento. Seus roteiros e dados continuam guardados.
-              Fale com a Visions para reativar.
-            </p>
-            <button className="btn full" onClick={onVoltar}>Voltar para o login</button>
+        <div className="tela-centro">
+          <div className="cartao" style={{ width: '100%', maxWidth: 440 }}>
+            <div className="faixa" />
+            <div className="cartao-corpo stack" style={{ textAlign: 'center' }}>
+              <img src={LOGO} alt="Visions Marketing" style={{ width: 180, margin: '4px auto 4px', display: 'block' }} />
+              <h2>Acesso suspenso</h2>
+              <p className="suave">
+                Seu acesso à plataforma está suspenso no momento. Seus roteiros e dados continuam guardados
+                e voltam do jeito que estavam quando o acesso for reativado. Fale com a Visions.
+              </p>
+              <button className="btn cheio" onClick={onVoltar}>Voltar para o login</button>
+            </div>
           </div>
         </div>
       );
@@ -342,7 +484,7 @@
     // ==========================================================
     // Painel do admin
     // ==========================================================
-    function Modal({ titulo, onFechar, children }) {
+    function Modal({ titulo, sobretitulo, onFechar, children }) {
       useEffect(() => {
         const esc = (e) => e.key === 'Escape' && onFechar();
         window.addEventListener('keydown', esc);
@@ -350,12 +492,18 @@
       }, [onFechar]);
       return (
         <div className="fundo-modal" onClick={(e) => e.target === e.currentTarget && onFechar()}>
-          <div className="modal stack" role="dialog" aria-modal="true" aria-label={titulo}>
-            <div className="entre">
-              <h2>{titulo}</h2>
-              <button className="btn link" onClick={onFechar} aria-label="Fechar">Fechar</button>
+          <div className="modal" role="dialog" aria-modal="true" aria-label={titulo}>
+            <div className="faixa" />
+            <div className="modal-corpo stack">
+              <div className="entre" style={{ alignItems: 'flex-start' }}>
+                <div>
+                  {sobretitulo && <span className="sobretitulo">{sobretitulo}</span>}
+                  <h2 style={{ marginTop: sobretitulo ? 4 : 0 }}>{titulo}</h2>
+                </div>
+                <button className="btn fantasma mini" onClick={onFechar} aria-label="Fechar">Fechar</button>
+              </div>
+              {children}
             </div>
-            {children}
           </div>
         </div>
       );
@@ -402,7 +550,7 @@
       }
 
       return (
-        <Modal titulo={editando ? 'Editar cliente' : 'Novo cliente'} onFechar={onFechar}>
+        <Modal titulo={editando ? cliente.nome : 'Novo cliente'} sobretitulo={editando ? 'Editar cliente' : 'Criar acesso'} onFechar={onFechar}>
           <form className="stack" onSubmit={salvar} noValidate>
             <div>
               <label htmlFor="f-nome">Nome</label>
@@ -410,28 +558,28 @@
             </div>
             <div>
               <label htmlFor="f-email">E-mail de login</label>
-              <input id="f-email" type="email" value={f.email} onChange={mudar('email')} disabled={editando} />
-              {editando && <p className="hint">O e-mail de login não muda por aqui.</p>}
+              <input id="f-email" type="email" placeholder="cliente@email.com" value={f.email} onChange={mudar('email')} disabled={editando} />
+              {editando && <p className="dica">O e-mail de login não muda por aqui.</p>}
             </div>
             <div>
               <label htmlFor="f-ig">Perfil do Instagram</label>
               <input id="f-ig" placeholder="@perfil" value={f.perfilInstagram} onChange={mudar('perfilInstagram')} />
             </div>
-            <div className="dupla">
+            <div className="duas">
               <div>
                 <label htmlFor="f-vence">Vencimento</label>
                 <input id="f-vence" type="date" value={f.venceEm} onChange={mudar('venceEm')} />
-                <p className="hint">Em branco: sem vencimento. Bloqueia sozinho no dia seguinte.</p>
+                <p className="dica">Em branco: sem vencimento. O bloqueio acontece sozinho no dia seguinte.</p>
               </div>
               <div>
-                <label htmlFor="f-limite">Limite de gerações por mês</label>
+                <label htmlFor="f-limite">Gerações por mês</label>
                 <input id="f-limite" type="number" min="0" inputMode="numeric" placeholder="Sem limite" value={f.limiteGeracoesMes} onChange={mudar('limiteGeracoesMes')} />
-                <p className="hint">Em branco: sem limite.</p>
+                <p className="dica">Controle de custo. Em branco: sem limite.</p>
               </div>
             </div>
             {erro && <div className="erro" role="alert">{erro}</div>}
-            <button className="btn primario full" disabled={salvando}>
-              {salvando ? <><span className="carregando" /> Salvando...</> : editando ? 'Salvar alterações' : 'Criar cliente'}
+            <button className="btn primario cheio" disabled={salvando}>
+              {salvando ? <><span className="girando" /> Salvando...</> : editando ? 'Salvar alterações' : 'Criar cliente'}
             </button>
           </form>
         </Modal>
@@ -440,25 +588,26 @@
 
     function SenhaGerada({ dados, onFechar }) {
       const mensagem =
-        `Oi, ${dados.nome.split(' ')[0]}! Seu acesso à plataforma de roteiros da Visions está pronto.\n\n` +
+        `Oi, ${primeiroNome(dados.nome)}! Seu acesso à plataforma de roteiros da Visions está pronto.\n\n` +
         `Link: ${location.origin}\nE-mail: ${dados.email}\nSenha provisória: ${dados.senha}`;
       return (
-        <Modal titulo={dados.titulo || 'Cliente criado'} onFechar={onFechar}>
-          <p className="muted" style={{ margin: 0 }}>
-            Repasse a senha para <strong>{dados.nome}</strong>. Ela só aparece agora: se perder, gere uma nova.
+        <Modal titulo={dados.titulo || 'Acesso criado'} sobretitulo={dados.nome} onFechar={onFechar}>
+          <p className="suave">
+            Repasse o acesso para <strong style={{ color: 'var(--tinta)' }}>{primeiroNome(dados.nome)}</strong>.
+            A senha só aparece agora. Se perder, gere uma nova pelo painel.
           </p>
-          <div>
-            <label>E-mail</label>
-            <div className="senha" style={{ fontSize: 16 }}>{dados.email}</div>
+          <div className="credencial">
+            <span className="sobretitulo">E-mail</span>
+            <div className="valor">{dados.email}</div>
           </div>
-          <div>
-            <label>Senha provisória</label>
-            <div className="senha">{dados.senha}</div>
+          <div className="credencial destaque">
+            <span className="sobretitulo">Senha provisória</span>
+            <div className="valor" data-senha>{dados.senha}</div>
           </div>
-          <button className="btn primario full" onClick={async () => toast((await copiar(mensagem)) ? 'Mensagem copiada. Cole no WhatsApp do cliente.' : 'Não consegui copiar. Selecione e copie à mão.')}>
+          <button className="btn primario cheio" onClick={async () => toast((await copiar(mensagem)) ? 'Mensagem copiada. É só colar no WhatsApp do cliente.' : 'Não consegui copiar. Selecione e copie à mão.')}>
             Copiar mensagem com o acesso
           </button>
-          <button className="btn full" onClick={onFechar}>Pronto</button>
+          <button className="btn cheio" onClick={onFechar}>Pronto</button>
         </Modal>
       );
     }
@@ -473,12 +622,12 @@
       async function alternarBloqueio() {
         const pergunta = ativo
           ? `Bloquear ${c.nome}? O acesso cai na hora, mesmo com o app aberto. Nada é apagado.`
-          : `Desbloquear ${c.nome}? Ela volta a acessar tudo como deixou.`;
+          : `Desbloquear ${c.nome}? O acesso volta com tudo como estava.`;
         if (!confirm(pergunta)) return;
         setOcupado(true);
         try {
           await chamar(ativo ? 'adminBloquearCliente' : 'adminDesbloquearCliente', { uid: c.id });
-          toast(ativo ? `${c.nome} foi bloqueado(a).` : `${c.nome} foi desbloqueado(a).`);
+          toast(ativo ? `Acesso de ${primeiroNome(c.nome)} bloqueado.` : `Acesso de ${primeiroNome(c.nome)} liberado.`);
         } catch (e) {
           toast(mensagemErro(e));
         }
@@ -498,38 +647,47 @@
       }
 
       return (
-        <div className="card">
-          <div className="entre">
-            <div style={{ minWidth: 0 }}>
-              <h3 style={{ fontSize: 17 }}>{c.nome}</h3>
-              <div className="muted small">{c.perfilInstagram ? '@' + c.perfilInstagram : 'sem perfil informado'}</div>
+        <article className="cartao cliente">
+          <div className="cliente-topo">
+            <div className={'avatar ' + corDoNome(c.nome)} aria-hidden="true">{iniciais(c.nome)}</div>
+            <div className="cliente-nome">
+              <h3>{c.nome}</h3>
+              <div className="suave peq">{c.perfilInstagram ? '@' + c.perfilInstagram : 'perfil não informado'}</div>
             </div>
-            <span className={'badge ' + (ativo ? 'ativo' : 'bloqueado')}>{ativo ? 'Ativo' : 'Bloqueado'}</span>
+            <span className={'selo ' + (ativo ? 'ativo' : 'bloqueado')}>{ativo ? 'Ativo' : 'Bloqueado'}</span>
           </div>
+
           <dl className="dados">
             <dt>E-mail</dt><dd>{c.email}</dd>
             <dt>Vencimento</dt>
             <dd>
+              {ativo && dias !== null && dias >= 0 && dias <= 7 && <><span className="selo alerta">{dias === 0 ? 'vence hoje' : `em ${dias} dia${dias > 1 ? 's' : ''}`}</span>{' '}</>}
               {c.venceEm ? paraBR(c.venceEm) : 'sem vencimento'}
-              {ativo && dias !== null && dias <= 7 && dias >= 0 && <> <span className="badge alerta">{dias === 0 ? 'vence hoje' : `${dias} dia(s)`}</span></>}
             </dd>
-            <dt>Gerações no mês</dt>
-            <dd>{usadas}{c.limiteGeracoesMes != null ? ` de ${c.limiteGeracoesMes}` : ' (sem limite)'}</dd>
-            {!ativo && c.bloqueadoEm && <><dt>Bloqueado em</dt><dd>{paraBR(c.bloqueadoEm)}{c.origemBloqueio === 'vencimento' ? ' (vencimento)' : ''}</dd></>}
+            {!ativo && c.bloqueadoEm && <><dt>Bloqueado em</dt><dd>{paraBR(c.bloqueadoEm)}{c.origemBloqueio === 'vencimento' ? ' · vencimento' : ''}</dd></>}
           </dl>
-          {c.limiteGeracoesMes ? <div className="barra" aria-hidden="true"><i style={{ width: pct + '%' }} /></div> : null}
-          <div className="acoes" style={{ marginTop: 14 }}>
-            <button className="btn peq" onClick={() => onEditar(c)} disabled={ocupado}>Editar</button>
-            <button className={'btn peq ' + (ativo ? 'perigo' : 'ok')} onClick={alternarBloqueio} disabled={ocupado}>
+
+          <div className="uso">
+            <div className="entre peq">
+              <span className="suave">Gerações em {nomeDoMes()}</span>
+              <span className="num">{usadas}{c.limiteGeracoesMes != null ? <span className="suave"> / {c.limiteGeracoesMes}</span> : <span className="suave"> · sem limite</span>}</span>
+            </div>
+            {c.limiteGeracoesMes ? <div className={'barra' + (pct >= 100 ? ' cheia' : '')} aria-hidden="true"><i style={{ width: pct + '%' }} /></div> : null}
+          </div>
+
+          <div className="acoes">
+            <button className="btn mini" onClick={() => onEditar(c)} disabled={ocupado}>Editar</button>
+            <button className="btn mini" onClick={novaSenha} disabled={ocupado}>Nova senha</button>
+            <span style={{ flex: 1 }} />
+            <button className={'btn mini ' + (ativo ? 'perigo' : 'positivo')} onClick={alternarBloqueio} disabled={ocupado}>
               {ativo ? 'Bloquear' : 'Desbloquear'}
             </button>
-            <button className="btn peq" onClick={novaSenha} disabled={ocupado}>Nova senha</button>
           </div>
-        </div>
+        </article>
       );
     }
 
-    function PainelAdmin({ usuario }) {
+    function PainelAdmin() {
       const [clientes, setClientes] = useState(null);
       const [erro, setErro] = useState('');
       const [busca, setBusca] = useState('');
@@ -548,7 +706,7 @@
 
       const lista = useMemo(() => {
         if (!clientes) return [];
-        const q = busca.trim().toLowerCase();
+        const q = busca.trim().toLowerCase().replace(/^@/, '');
         return clientes
           .filter((c) => filtro === 'todos' || c.status === filtro)
           .filter((c) => !q || [c.nome, c.email, c.perfilInstagram].some((v) => (v || '').toLowerCase().includes(q)))
@@ -556,8 +714,11 @@
       }, [clientes, busca, filtro]);
 
       const totais = useMemo(() => {
-        const t = { ativo: 0, bloqueado: 0 };
-        (clientes || []).forEach((c) => t[c.status] = (t[c.status] || 0) + 1);
+        const t = { ativo: 0, bloqueado: 0, geracoes: 0 };
+        (clientes || []).forEach((c) => {
+          t[c.status] = (t[c.status] || 0) + 1;
+          t.geracoes += geracoesDoMes(c);
+        });
         return t;
       }, [clientes]);
 
@@ -574,57 +735,68 @@
       const fechar = useCallback(() => setModal(null), []);
 
       return (
-        <div className="wrap">
-          <div className="topo">
-            <Marca />
-            <button className="btn peq" onClick={() => auth.signOut()}>Sair</button>
-          </div>
+        <>
+          <Cabecalho rotulo="Admin">
+            <button className="btn fantasma mini" onClick={() => auth.signOut()}>Sair</button>
+          </Cabecalho>
 
-          <div className="stack">
-            <div className="entre">
+          <main className="wrap conteudo stack-lg">
+            <div className="entre" style={{ alignItems: 'flex-end' }}>
               <div>
-                <h1>Clientes</h1>
-                <div className="muted small">{totais.ativo} ativo(s) · {totais.bloqueado} bloqueado(s)</div>
+                <span className="sobretitulo">Painel</span>
+                <h1 style={{ marginTop: 6 }}>Clientes</h1>
               </div>
-              <button className="btn primario" onClick={() => setModal({ tipo: 'novo' })}>+ Novo cliente</button>
+              <button className="btn primario" onClick={() => setModal({ tipo: 'novo' })}>Novo cliente</button>
+            </div>
+
+            <div className="indicadores">
+              <div className="indicador v"><span className="sobretitulo">Ativos</span><div className="valor">{clientes ? totais.ativo : '–'}</div></div>
+              <div className="indicador r"><span className="sobretitulo">Bloqueados</span><div className="valor">{clientes ? totais.bloqueado : '–'}</div></div>
+              <div className="indicador a"><span className="sobretitulo">Gerações</span><div className="valor">{clientes ? totais.geracoes : '–'}</div></div>
             </div>
 
             {configFalta && (
               <div className="aviso entre">
-                <span>As configurações iniciais (lista da trava e referências de métricas) ainda não foram criadas.</span>
-                <button className="btn peq" onClick={criarConfig}>Criar agora</button>
+                <span>Faltam as configurações iniciais: lista da trava anti-IA e referências de métricas.</span>
+                <button className="btn mini" onClick={criarConfig}>Criar agora</button>
               </div>
             )}
 
-            <div className="dupla">
-              <input placeholder="Buscar por nome, e-mail ou @" value={busca} onChange={(e) => setBusca(e.target.value)} aria-label="Buscar cliente" />
-              <select value={filtro} onChange={(e) => setFiltro(e.target.value)} aria-label="Filtrar por status">
-                <option value="todos">Todos os status</option>
-                <option value="ativo">Só ativos</option>
-                <option value="bloqueado">Só bloqueados</option>
-              </select>
-            </div>
-
-            {erro && <div className="erro">{erro}</div>}
-            {!clientes && !erro && <div className="linha muted"><span className="carregando" /> Carregando clientes...</div>}
-            {clientes && !lista.length && (
-              <div className="card vazio muted">
-                {clientes.length ? 'Nenhum cliente encontrado com esse filtro.' : 'Nenhum cliente ainda. Toque em "Novo cliente" para criar o primeiro login.'}
+            <div className="stack">
+              <div className="filtros">
+                <input placeholder="Buscar por nome, e-mail ou @" value={busca} onChange={(e) => setBusca(e.target.value)} aria-label="Buscar cliente" />
+                <select value={filtro} onChange={(e) => setFiltro(e.target.value)} aria-label="Filtrar por status">
+                  <option value="todos">Todos os status</option>
+                  <option value="ativo">Só ativos</option>
+                  <option value="bloqueado">Só bloqueados</option>
+                </select>
               </div>
-            )}
-            <div className="grade">
-              {lista.map((c) => (
-                <CartaoCliente key={c.id} c={c}
-                  onEditar={(c) => setModal({ tipo: 'editar', dados: c })}
-                  onSenha={(d) => setModal({ tipo: 'senha', dados: d })} />
-              ))}
+
+              {erro && <div className="erro">{erro}</div>}
+              {!clientes && !erro && <div className="linha suave"><span className="girando" /> Carregando clientes...</div>}
+              {clientes && !lista.length && (
+                <div className="cartao vazio">
+                  {clientes.length ? (
+                    <><h3>Nada por aqui</h3><p className="suave">Nenhum cliente com esse filtro.</p></>
+                  ) : (
+                    <><h3>Nenhum cliente ainda</h3><p className="suave">Crie o primeiro acesso em "Novo cliente".</p></>
+                  )}
+                </div>
+              )}
+              <div className="grade">
+                {lista.map((c) => (
+                  <CartaoCliente key={c.id} c={c}
+                    onEditar={(c) => setModal({ tipo: 'editar', dados: c })}
+                    onSenha={(d) => setModal({ tipo: 'senha', dados: d })} />
+                ))}
+              </div>
             </div>
-          </div>
+          </main>
 
           {modal?.tipo === 'novo' && <FormCliente onFechar={fechar} onCriado={(d) => setModal({ tipo: 'senha', dados: d })} />}
           {modal?.tipo === 'editar' && <FormCliente cliente={modal.dados} onFechar={fechar} />}
           {modal?.tipo === 'senha' && <SenhaGerada dados={modal.dados} onFechar={fechar} />}
-        </div>
+        </>
       );
     }
 
@@ -633,18 +805,22 @@
     // ==========================================================
     function InicioCliente({ cliente }) {
       return (
-        <div className="wrap">
-          <div className="topo">
-            <Marca />
-            <button className="btn peq" onClick={() => auth.signOut()}>Sair</button>
-          </div>
-          <div className="card stack">
-            <h1>Olá, {cliente.nome.split(' ')[0]}!</h1>
-            <p className="muted" style={{ margin: 0 }}>
-              Seu acesso está ativo. Em breve você vai montar aqui o DNA do seu perfil e gerar seus roteiros.
-            </p>
-          </div>
-        </div>
+        <>
+          <Cabecalho>
+            <button className="btn fantasma mini" onClick={() => auth.signOut()}>Sair</button>
+          </Cabecalho>
+          <main className="wrap conteudo">
+            <div className="cartao">
+              <div className="boas-vindas stack">
+                <span className="sobretitulo">Sua área</span>
+                <h1>Olá, <em>{primeiroNome(cliente.nome)}</em>.</h1>
+                <p className="suave" style={{ maxWidth: 520 }}>
+                  Seu acesso está ativo. Em breve você monta aqui o DNA do seu perfil e começa a gerar roteiros com a sua voz.
+                </p>
+              </div>
+            </div>
+          </main>
+        </>
       );
     }
 
@@ -702,7 +878,7 @@
       } else if (estado.fase === 'login') {
         tela = <Login onSuspenso={() => setSuspenso(true)} />;
       } else if (estado.fase === 'admin') {
-        tela = <PainelAdmin usuario={estado.usuario} />;
+        tela = <PainelAdmin />;
       } else {
         tela = <InicioCliente cliente={estado.cliente} />;
       }

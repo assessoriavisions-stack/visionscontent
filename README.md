@@ -30,6 +30,8 @@ functions/
   config/seedPadrao.js     valores iniciais de config/travaAntiIA e config/benchmarks
   scripts/seed.js          cria a config pela linha de comando
   scripts/definirAdmin.js  dá o papel de admin a um e-mail
+  scripts/limparProjeto.js apaga Auth + Firestore do projeto (limpeza do sistema antigo)
+assets/                    logo
 testes/                    teste ponta a ponta contra os emuladores
 ```
 
@@ -52,22 +54,39 @@ Toda callable de cliente usa `callableCliente()`, que checa login, `status === "
 
 ## Configuração inicial (uma vez)
 
-1. Crie o projeto no Firebase (plano Blaze, exigido por Functions/Scheduler/Secret Manager) e ative
-   Authentication > E-mail/senha e o Firestore (região `southamerica-east1`).
-2. Troque o id do projeto em `.firebaserc` e cole a config web do projeto em `FIREBASE_CONFIG` no `index.html`.
-3. Deploy do backend:
+Projeto Firebase: `visionscontent-cba52` (reaproveitado do sistema antigo, plano Blaze).
+
+1. **Config web:** no Console, Configurações do projeto > Seus apps > Configuração do SDK.
+   Cole `apiKey`, `messagingSenderId` e `appId` em `FIREBASE_CONFIG` no `index.html`
+   (esses valores são públicos; a segurança vem das regras e das functions).
+2. **Authentication:** confirme que o login por E-mail/senha está ativo.
+3. **Limpar o sistema antigo** (apaga TODOS os usuários do Auth e TODAS as coleções do Firestore):
    ```bash
-   cd functions && npm install && cd ..
+   gcloud auth application-default login
+   cd functions && npm install
+   node scripts/limparProjeto.js --confirmar visionscontent-cba52
+   ```
+4. **Deploy do backend** (regras do Firestore + functions). Se o projeto antigo tinha outras
+   functions, o CLI vai perguntar se quer apagá-las: responda que sim.
+   ```bash
    firebase deploy --only firestore:rules,functions
    ```
-4. Defina o primeiro admin (precisa de credencial do projeto, ex.: `gcloud auth application-default login`):
+5. **Primeiro admin:**
    ```bash
    cd functions && node scripts/definirAdmin.js seu@email.com SenhaInicial123
    ```
-5. Publique a raiz do repositório no Netlify. Ao entrar como admin, toque em **Criar agora** no aviso de
-   configurações iniciais (ou rode `node scripts/seed.js`).
-6. A chave da Anthropic (usada a partir da Fase 2) vai no Secret Manager:
+6. **Frontend:** publique a raiz do repositório no Netlify. Ao entrar como admin, toque em
+   **Criar agora** no aviso de configurações iniciais (ou rode `node scripts/seed.js`).
+7. **Chave da Anthropic** (usada a partir da Fase 2), no Secret Manager:
    `firebase functions:secrets:set ANTHROPIC_API_KEY`.
+
+Os scripts de `functions/scripts/` usam o projeto do `.firebaserc` (ou `GOOGLE_CLOUD_PROJECT`, se definido).
+
+## Visual
+
+Identidade da Visions: vermelho `#DD2A2A`, amarelo `#FFCF51` e azul `#2657A5` do logo, fundo marfim,
+títulos em Fraunces (serifada) e texto em Inter. A faixa tricolor do logo aparece no topo dos cartões
+e do cabeçalho. Logo em `assets/logo-visions.png`.
 
 ## Rodar local e testar
 
