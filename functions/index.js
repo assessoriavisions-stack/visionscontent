@@ -15,6 +15,12 @@ exports.resetarContadorMensal = admin.resetarContadorMensal;
 const dna = require('./dna');
 exports.extrairPerfilDeVoz = dna.extrairPerfilDeVoz;
 
+// Fase 3: geração
+const roteiros = require('./roteiros');
+exports.sugerirTemas = roteiros.sugerirTemas;
+exports.gerarRoteiro = roteiros.gerarRoteiro;
+require('./ia/respostasFalsas'); // só tem efeito nos emuladores com IA_FAKE=1
+
 // Callable mínima usada para verificar o middleware do cliente (status ativo).
 // As próximas fases trocam isto pelas functions reais (gerarRoteiro etc.).
 const { callableCliente } = require('./lib/middleware');

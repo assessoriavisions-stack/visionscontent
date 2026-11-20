@@ -22,11 +22,13 @@ function obterCliente() {
 }
 
 // Gera texto. `chave` identifica a tarefa (usada no modo falso e nos logs).
-async function gerarTexto({ chave, system, mensagens, maxTokens = 8000, effort = 'medium' }) {
+// Com `esquema`, pede JSON estruturado (a API garante o formato).
+async function gerarTexto({ chave, system, mensagens, maxTokens = 8000, effort = 'medium', esquema = null }) {
   if (MODO_FALSO()) {
     const fn = respostasFalsas.get(chave);
     if (!fn) throw new Error(`Sem resposta falsa registrada para "${chave}"`);
-    return fn({ system, mensagens });
+    const r = await fn({ system, mensagens });
+    return typeof r === 'string' ? r : JSON.stringify(r);
   }
 
   let resposta;
@@ -36,7 +38,7 @@ async function gerarTexto({ chave, system, mensagens, maxTokens = 8000, effort =
       max_tokens: maxTokens,
       system,
       messages: mensagens,
-      output_config: { effort },
+      output_config: esquema ? { effort, format: { type: 'json_schema', schema: esquema } } : { effort },
       // Se o modelo principal recusar por política, a API refaz no modelo de reserva.
       betas: ['server-side-fallback-2026-07-01'],
       fallbacks: 'default',
@@ -66,4 +68,32 @@ async function gerarTexto({ chave, system, mensagens, maxTokens = 8000, effort =
   return texto;
 }
 
-module.exports = { ANTHROPIC_API_KEY, MODEL_ID, gerarTexto, registrarRespostaFalsa, MODO_FALSO };
+// Gera JSON no esquema pedido. `validar(obj)` devolve lista de problemas; se vier quebrado
+// ou com problema, tenta de novo uma vez mostrando o que corrigir.
+async function gerarJSON({ chave, system, mensagens, esquema, validar = () => [], maxTokens = 16000, effort = 'medium' }) {
+  let conversa = mensagens;
+  for (let tentativa = 0; tentativa < 2; tentativa++) {
+    const texto = await gerarTexto({ chave, system, mensagens: conversa, maxTokens, effort, esquema });
+    let obj = null;
+    let problemas;
+    try {
+      obj = JSON.parse(texto);
+      problemas = validar(obj);
+    } catch {
+      problemas = ['a resposta não veio em JSON válido'];
+    }
+    if (!problemas.length) return obj;
+    console.warn(`IA: ${chave} com problemas (tentativa ${tentativa + 1}):`, problemas);
+    conversa = [
+      ...mensagens,
+      { role: 'assistant', content: texto },
+      { role: 'user', content: `Corrija estes problemas e devolva o JSON completo:\n- ${problemas.join('\n- ')}` },
+    ];
+    if (tentativa === 1) {
+      throw new HttpsError('internal', 'Não consegui montar o conteúdo no formato certo. Tente de novo.');
+    }
+  }
+  return null;
+}
+
+module.exports = { ANTHROPIC_API_KEY, MODEL_ID, gerarTexto, gerarJSON, registrarRespostaFalsa, MODO_FALSO };

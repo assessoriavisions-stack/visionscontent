@@ -93,7 +93,103 @@ const REGRAS_TESTE = [
   'Quem posta com constância reaproveita o que funcionou a cada 3 meses, com gancho novo.',
 ];
 
+
+// ---------- Fase 3: geração ----------
+
+// 9.2 Papel de cada formato (vai no prompt).
+const PAPEL_FORMATO = {
+  reels: 'o formato que fura a bolha e alcança quem não segue. Gancho de 3s obrigatório. Para P2 com intenção de anúncio e para P1 (crescer a base), no máximo 1min30, ideal entre 50 e 70s',
+  carrossel: 'alta performance, mas dentro do público atual. Construído em storytelling: um slide puxa o próximo',
+  post_unico: 'uma ideia, uma headline forte e um apoio curto',
+  story_unico: 'funil quente, fala com a comunidade atual. Conexão e interação',
+  sequencia_stories: 'funil quente, fala com a comunidade atual. Narrativa, conexão e interação (enquete, caixinha, quiz, reação). O objetivo é engajamento',
+  serie: 'conteúdo em partes, funciona porque o conteúdo está ligado à pessoa. Cada parte termina puxando a próxima e começa retomando a anterior em uma frase',
+};
+
+// 9.3 Estilos válidos por formato. Para reels, série, carrossel e post único vale a interseção
+// com os estilos do pilar. Stories têm lista própria (independente do pilar).
+const ESTILOS_POR_FORMATO = {
+  reels: null, // todos os estilos do pilar
+  serie: null,
+  carrossel: null, // pauta quente só quando o tema não depende de vídeo (o prompt avisa)
+  post_unico: ['analise', 'opiniao', 'desejo', 'prova_social', 'noticia'],
+  story_unico: ['historia', 'bastidor', 'prova_social', 'opiniao', 'desejo', 'interacao', 'tecnico'],
+  sequencia_stories: ['historia', 'bastidor', 'prova_social', 'opiniao', 'desejo', 'interacao', 'tecnico'],
+};
+const FORMATOS_STORY = ['story_unico', 'sequencia_stories'];
+
+function estilosValidos(formato, pilar) {
+  const doFormato = ESTILOS_POR_FORMATO[formato];
+  if (FORMATOS_STORY.includes(formato)) return doFormato;
+  const doPilar = PILARES[pilar]?.estilos || [];
+  return doFormato ? doPilar.filter((e) => doFormato.includes(e)) : doPilar;
+}
+
+// 9.5 Frameworks e sugestão padrão.
+const FRAMEWORKS = {
+  ADP: 'Antes, Depois, Ponte, sempre nessa ordem',
+  AIDA: 'Atenção, Interesse, Desejo, Ação',
+  CCCA: 'Consciência, Compreender, Convicção, Ação',
+};
+function frameworkSugerido(pilar, estilo) {
+  if (pilar === 'P2' && ['transformacao', 'historia', 'prova_social'].includes(estilo)) return 'ADP';
+  if (pilar === 'P2' && estilo === 'tecnico') return 'CCCA';
+  if (pilar === 'P3' && estilo === 'analise') return 'CCCA';
+  if (pilar === 'P2') return 'ADP';
+  return 'AIDA'; // P1 e P3 (desejo, notícia, opinião)
+}
+
+// 9.6 CTAs e padrão sugerido.
+const CTAS = {
+  comentar: 'Comentar palavra-chave',
+  salvar: 'Salvar',
+  enviar: 'Enviar para alguém',
+  link_bio: 'Link na bio',
+  direct: 'Chamar no direct',
+  enquete: 'Responder enquete/caixinha',
+  parte2: 'Seguir para a próxima parte',
+  sem_cta: 'Sem CTA explícito',
+};
+const CTA_POR_DESTINO = { direct: 'direct', whatsapp: 'link_bio', link_bio: 'link_bio', formulario: 'link_bio', loja: 'link_bio' };
+function ctaSugerido(formato, pilar, destinoVenda) {
+  if (FORMATOS_STORY.includes(formato)) return 'enquete';
+  if (formato === 'serie') return 'parte2';
+  if (pilar === 'P1') return 'enviar';
+  if (pilar === 'P2') return CTA_POR_DESTINO[destinoVenda] || 'direct';
+  return 'comentar';
+}
+
+// 9.7 Estilos de legenda.
+const ESTILOS_LEGENDA = {
+  passo_a_passo: 'Passo a passo',
+  explicativa: 'Explicativa',
+  curta_provocativa: 'Curta e provocativa',
+  storytelling: 'Storytelling',
+  lista: 'Lista',
+  pergunta: 'Pergunta para comentários',
+};
+
+const FORMATOS_COM_VISUAL = ['reels', 'serie'];
+const FORMATOS_COM_GANCHOS = Object.keys(GANCHOS_POR_FORMATO);
+const PALAVRAS_POR_SEGUNDO = 2.5;
+const DURACAO_ALVO_CORTE_SEG = 70;
+const MAX_PARTES_SERIE = 10;
+
 module.exports = {
+  PAPEL_FORMATO,
+  ESTILOS_POR_FORMATO,
+  FORMATOS_STORY,
+  estilosValidos,
+  FRAMEWORKS,
+  frameworkSugerido,
+  CTAS,
+  ctaSugerido,
+  ESTILOS_LEGENDA,
+  FORMATOS_COM_VISUAL,
+  FORMATOS_COM_GANCHOS,
+  PALAVRAS_POR_SEGUNDO,
+  DURACAO_ALVO_CORTE_SEG,
+  MAX_PARTES_SERIE,
   FORMATOS,
   PILARES,
   ESTILOS,

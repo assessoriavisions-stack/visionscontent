@@ -246,6 +246,54 @@
     .carregando-ia { display: flex; align-items: center; gap: 10px; padding: 18px; border-radius: var(--raio-sm); background: var(--azul-claro); color: var(--azul); font-weight: 500; }
     .barra-acoes { display: flex; justify-content: flex-end; gap: 10px; position: sticky; bottom: 0; padding: 14px 0 calc(14px + env(safe-area-inset-bottom)); background: linear-gradient(to top, var(--marfim) 70%, transparent); }
 
+    /* Criar e ver roteiro */
+    .opcoes { display: grid; gap: 10px; grid-template-columns: 1fr; }
+    @media (min-width: 560px) { .opcoes { grid-template-columns: 1fr 1fr; } }
+    .opcao { text-align: left; display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: var(--raio-sm); border: 1px solid var(--linha); background: var(--superficie); cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .12s; }
+    .opcao:hover { border-color: #CFC7B5; box-shadow: var(--sombra-leve); }
+    .opcao:active { transform: translateY(1px); }
+    .opcao strong { font-family: var(--serifa); font-weight: 500; font-size: 17px; color: var(--tinta); }
+    .opcao span { font-size: 13.5px; color: var(--suave); }
+    .opcao em { font-style: normal; font-size: 12px; color: var(--azul); font-weight: 500; }
+    .opcao.ativa { border-color: var(--tinta); box-shadow: 0 0 0 1px var(--tinta) inset; background: var(--superficie-2); }
+    .trilha { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip-trilha { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 0; padding: 6px 12px; border-radius: 10px; border: 1px solid var(--linha); background: var(--superficie); cursor: pointer; font-size: 13px; color: var(--tinta-2); max-width: 100%; text-align: left; }
+    .chip-trilha span { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--suave); }
+    .chip-trilha:hover { border-color: #CFC7B5; }
+    .resumo dd .btn.texto { text-align: right; white-space: normal; max-width: 100%; display: inline; line-height: 1.4; }
+    .resumo { grid-template-columns: minmax(90px, auto) 1fr; }
+    .girando.grande { width: 28px; height: 28px; border-width: 3px; color: var(--azul); display: block; }
+    .etiquetas-roteiro { display: flex; flex-wrap: wrap; gap: 6px; }
+    .etiquetas-roteiro span { font-size: 12.5px; padding: 4px 10px; border-radius: 999px; background: var(--superficie); border: 1px solid var(--linha); color: var(--tinta-2); }
+    .ideia { background: var(--tinta); color: var(--marfim); border-radius: var(--raio); padding: 22px 24px; }
+    .ideia .sobretitulo { color: #A9B0C2; }
+    .ideia p { font-family: var(--serifa); font-size: 21px; line-height: 1.35; margin-top: 6px; }
+    .legenda-cores { display: flex; gap: 14px; font-size: 12.5px; color: var(--suave); flex-wrap: wrap; }
+    .legenda-cores span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+    .legenda-cores .cor-fala::before { background: var(--tinta); }
+    .legenda-cores .cor-visual::before { background: var(--azul-claro); border: 1px solid #C9D6EE; }
+    .legenda-cores .cor-tela::before { background: var(--amarelo-claro); border: 1px solid #F6E3A8; }
+    .bloco { background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-sm); padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+    .bloco header { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--suave); }
+    .bloco header strong { color: var(--tinta); font-weight: 600; }
+    .fala { font-size: 16.5px; line-height: 1.55; color: var(--tinta); }
+    .titulo-arte { font-family: var(--serifa); font-size: 22px; }
+    .visual { font-size: 14px; color: #1E4785; background: var(--azul-claro); border-radius: 10px; padding: 10px 12px; }
+    .visual::before { content: "Mostrar · "; font-weight: 600; }
+    .na-tela { font-size: 14px; color: #6B4E00; background: var(--amarelo-claro); border-radius: 10px; padding: 8px 12px; }
+    .na-tela::before { content: "Na tela · "; font-weight: 600; }
+    mark.cara-de-ia { background: transparent; color: inherit; text-decoration: underline wavy var(--vermelho); text-decoration-thickness: 1.5px; text-underline-offset: 4px; cursor: help; }
+    .gancho { display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; padding: 14px 0; border-top: 1px solid var(--linha-2); }
+    .gancho-n { width: 30px; height: 30px; border-radius: 50%; background: var(--tinta); color: var(--marfim); display: grid; place-items: center; font-family: var(--serifa); }
+    .gancho-corpo { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .legenda-texto { white-space: pre-wrap; background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-sm); padding: 16px 18px; font-size: 15px; }
+    .nota { background: var(--superficie-2); border: 1px dashed var(--linha); border-radius: var(--raio-sm); padding: 14px 16px; font-size: 14px; }
+    .lista-roteiros { display: grid; gap: 10px; grid-template-columns: 1fr; }
+    @media (min-width: 720px) { .lista-roteiros { grid-template-columns: 1fr 1fr; } }
+    .item-roteiro { text-align: left; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; padding: 16px 18px; border-radius: var(--raio-sm); border: 1px solid var(--linha); background: var(--superficie); cursor: pointer; }
+    .item-roteiro strong { font-family: var(--serifa); font-weight: 500; font-size: 17px; }
+    .item-roteiro:hover { border-color: #CFC7B5; box-shadow: var(--sombra-leve); }
+
     /* Fase de crescimento */
     .selo.testes { background: var(--azul-claro); color: var(--azul); }
     .selo.vencedor { background: var(--amarelo-claro); color: #8A6400; }
@@ -315,8 +363,8 @@
     // ==========================================================
     // Utilitários
     // ==========================================================
-    async function chamar(nome, dados = {}) {
-      const r = await fns.httpsCallable(nome)(dados);
+    async function chamar(nome, dados = {}, opcoes = {}) {
+      const r = await fns.httpsCallable(nome, opcoes.timeout ? { timeout: opcoes.timeout } : undefined)(dados);
       return r.data;
     }
 
@@ -1392,14 +1440,536 @@
       );
     }
 
+    // ==========================================================
+    // Fase 3: criar roteiro (wizard da seção 8.1) e ver o resultado
+    // ==========================================================
+    const PILARES = {
+      P1: { nome: 'P1 · Demanda', objetivo: 'Gerar demanda e alcançar quem ainda não te conhece', kpi: 'Compartilhamento', estilos: ['analise', 'pauta_quente', 'cultura_pop'] },
+      P2: { nome: 'P2 · Venda', objetivo: 'Vender', kpi: 'Conversão (direct, link, mensagem)', estilos: ['historia', 'prova_social', 'tecnico', 'transformacao'] },
+      P3: { nome: 'P3 · Fidelização', objetivo: 'Fidelizar quem já te segue', kpi: 'Comentários, curtidas e salvamentos', estilos: ['noticia', 'analise', 'desejo', 'opiniao'] },
+    };
+    const ESTILOS = { analise: 'Análise', pauta_quente: 'Pauta quente', cultura_pop: 'Cultura pop', historia: 'História', prova_social: 'Prova social', tecnico: 'Técnico', transformacao: 'Transformação', noticia: 'Notícia', desejo: 'Desejo', opiniao: 'Opinião', bastidor: 'Bastidor', interacao: 'Enquete / caixinha' };
+    const FORMATOS_INFO = {
+      reels: 'Fura a bolha: alcança quem ainda não te segue.',
+      carrossel: 'Alta performance com quem já te segue. Um slide puxa o outro.',
+      post_unico: 'Uma ideia, uma headline forte.',
+      story_unico: 'Um story para conversar com quem já te segue.',
+      sequencia_stories: 'Narrativa e interação com quem já te segue.',
+      serie: 'Conteúdo em partes. Cada parte puxa a próxima.',
+    };
+    const ESTILOS_POR_FORMATO = {
+      post_unico: ['analise', 'opiniao', 'desejo', 'prova_social', 'noticia'],
+      story_unico: ['historia', 'bastidor', 'prova_social', 'opiniao', 'desejo', 'interacao', 'tecnico'],
+      sequencia_stories: ['historia', 'bastidor', 'prova_social', 'opiniao', 'desejo', 'interacao', 'tecnico'],
+    };
+    const FORMATOS_STORY = ['story_unico', 'sequencia_stories'];
+    function estilosValidos(formato, pilar) {
+      const f = ESTILOS_POR_FORMATO[formato];
+      if (FORMATOS_STORY.includes(formato)) return f;
+      const p = PILARES[pilar]?.estilos || [];
+      return f ? p.filter((e) => f.includes(e)) : p;
+    }
+    const FRAMEWORKS = { ADP: 'Antes, Depois, Ponte', AIDA: 'Atenção, Interesse, Desejo, Ação', CCCA: 'Consciência, Compreender, Convicção, Ação' };
+    function frameworkSugerido(pilar, estilo) {
+      if (pilar === 'P2' && ['transformacao', 'historia', 'prova_social'].includes(estilo)) return 'ADP';
+      if (pilar === 'P2' && estilo === 'tecnico') return 'CCCA';
+      if (pilar === 'P3' && estilo === 'analise') return 'CCCA';
+      if (pilar === 'P2') return 'ADP';
+      return 'AIDA';
+    }
+    const CTAS = { comentar: 'Comentar palavra-chave', salvar: 'Salvar', enviar: 'Enviar para alguém', link_bio: 'Link na bio', direct: 'Chamar no direct', enquete: 'Responder enquete/caixinha', parte2: 'Seguir para a próxima parte', sem_cta: 'Sem CTA explícito' };
+    function ctaSugerido(formato, pilar, destino) {
+      if (FORMATOS_STORY.includes(formato)) return 'enquete';
+      if (formato === 'serie') return 'parte2';
+      if (pilar === 'P1') return 'enviar';
+      if (pilar === 'P2') return destino === 'direct' ? 'direct' : 'link_bio';
+      return 'comentar';
+    }
+    const ESTILOS_LEGENDA = { passo_a_passo: 'Passo a passo', explicativa: 'Explicativa', curta_provocativa: 'Curta e provocativa', storytelling: 'Storytelling', lista: 'Lista', pergunta: 'Pergunta para comentários' };
+    const TIPOS_BLOCO = { gancho: 'Gancho', contexto: 'Contexto', climax: 'Clímax', apresentacao: 'Apresentação', conteudo: 'Conteúdo', cta: 'Chamada (CTA)', encerramento: 'Encerramento' };
+    const TIPOS_FRAME = { fala: 'Fala', texto: 'Texto', foto: 'Foto', video: 'Vídeo', enquete: 'Enquete', caixinha: 'Caixinha', quiz: 'Quiz', link: 'Link' };
+
+    function Opcoes({ opcoes, valor, onEscolher }) {
+      return (
+        <div className="opcoes">
+          {opcoes.map((o) => (
+            <button type="button" key={o.id} className={'opcao' + (valor === o.id ? ' ativa' : '')} onClick={() => onEscolher(o.id)}>
+              <strong>{o.titulo}</strong>
+              {o.texto && <span>{o.texto}</span>}
+              {o.selo && <em>{o.selo}</em>}
+            </button>
+          ))}
+        </div>
+      );
+    }
+
+    function CriarRoteiro({ dna, onPronto, onVoltar }) {
+      const [e, setE] = useState({});
+      const [passo, setPasso] = useState('formato');
+      const [temas, setTemas] = useState(null);
+      const [buscandoTemas, setBuscandoTemas] = useState(false);
+      const [gerando, setGerando] = useState(false);
+      const [etapaGeracao, setEtapaGeracao] = useState('');
+      const [erro, setErro] = useState('');
+      const [revisando, setRevisando] = useState(false); // veio do "Revisar" para mudar um item
+
+      const temVisual = ['reels', 'serie'].includes(e.formato);
+      const ehStory = FORMATOS_STORY.includes(e.formato);
+      const passos = ['formato', 'pilar', 'estilo', 'angulo', 'tema', 'framework', ...(temVisual ? ['visual'] : []), 'cta', 'revisar'];
+      const rotulos = {
+        formato: e.formato && FORMATOS[e.formato], pilar: e.pilar && PILARES[e.pilar].nome, estilo: e.estilo && ESTILOS[e.estilo],
+        angulo: e.angulo && ANGULOS[e.angulo], tema: e.tema, framework: e.framework, visual: e.formatoVisual && FORMATOS_VISUAIS[e.formatoVisual],
+        cta: e.cta && CTAS[e.cta],
+      };
+      const nomesPasso = { formato: 'Formato', pilar: 'Pilar', estilo: 'Estilo', angulo: 'Ângulo', tema: 'Tema', framework: 'Framework', visual: 'Formato visual', cta: 'CTA e legenda', revisar: 'Revisar' };
+      const ir = (p) => { setErro(''); setPasso(p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+      const proximo = (atual, extra = {}) => {
+        const novo = { ...e, ...extra };
+        const lista = ['formato', 'pilar', 'estilo', 'angulo', 'tema', 'framework', ...(['reels', 'serie'].includes(novo.formato) ? ['visual'] : []), 'cta', 'revisar'];
+        // Normal: próximo passo da lista. Vindo do "Revisar": volta para lá (ou para o que ficou sem resposta).
+        const idx = lista.indexOf(atual);
+        if (revisando) {
+          const falta = lista.find((p) => p !== 'revisar' && !respondido(p, novo));
+          ir(falta || 'revisar');
+        } else {
+          ir(lista[idx + 1] || 'revisar');
+        }
+      };
+      function respondido(p, x) {
+        if (p === 'formato') return !!x.formato;
+        if (p === 'pilar') return !!x.pilar;
+        if (p === 'estilo') return !!x.estilo;
+        if (p === 'angulo') return !!x.angulo;
+        if (p === 'tema') return !!x.tema?.trim();
+        if (p === 'framework') return !!x.framework;
+        if (p === 'visual') return !!x.formatoVisual;
+        if (p === 'cta') return !!x.cta && (FORMATOS_STORY.includes(x.formato) || !!x.estiloLegenda);
+        return true;
+      }
+      function escolher(campo, valor, extra = {}) {
+        let novo = { ...e, [campo]: valor, ...extra };
+        // Mudou formato ou pilar: estilo inválido sai; framework e CTA voltam para a sugestão.
+        if ((campo === 'formato' || campo === 'pilar') && novo.estilo && novo.pilar && novo.formato && !estilosValidos(novo.formato, novo.pilar).includes(novo.estilo)) novo.estilo = undefined;
+        if (campo === 'formato' && !['reels', 'serie'].includes(valor)) novo.formatoVisual = undefined;
+        if (['formato', 'pilar', 'estilo'].includes(campo) && novo.pilar && novo.estilo) novo.framework = frameworkSugerido(novo.pilar, novo.estilo);
+        if (['formato', 'pilar'].includes(campo) && novo.formato && novo.pilar) novo.cta = ctaSugerido(novo.formato, novo.pilar, dna?.negocio?.destinoVenda);
+        if (campo === 'formato' || campo === 'pilar' || campo === 'estilo' || campo === 'angulo') setTemas(null);
+        setE(novo);
+        return novo;
+      }
+
+      async function sugerirTemas() {
+        setErro('');
+        setBuscandoTemas(true);
+        try {
+          const r = await chamar('sugerirTemas', { formato: e.formato, pilar: e.pilar, estilo: e.estilo, angulo: e.angulo }, { timeout: 300000 });
+          setTemas(r.temas);
+        } catch (err) {
+          setErro(mensagemErro(err));
+        }
+        setBuscandoTemas(false);
+      }
+
+      async function gerar() {
+        setErro('');
+        setGerando(true);
+        setEtapaGeracao('Escrevendo seu roteiro...');
+        const t1 = setTimeout(() => setEtapaGeracao('Conferindo o texto...'), 25000);
+        const t2 = setTimeout(() => setEtapaGeracao('Ajustando os últimos detalhes...'), 60000);
+        try {
+          const r = await chamar('gerarRoteiro', { ...e, formatoVisual: temVisual ? e.formatoVisual : null, estiloLegenda: ehStory ? null : e.estiloLegenda }, { timeout: 540000 });
+          onPronto(r.id);
+        } catch (err) {
+          setErro(mensagemErro(err));
+          setGerando(false);
+        }
+        clearTimeout(t1);
+        clearTimeout(t2);
+      }
+
+      if (gerando) {
+        return (
+          <div className="tela-centro">
+            <div className="cartao" style={{ width: '100%', maxWidth: 420 }}>
+              <div className="faixa" />
+              <div className="cartao-corpo stack" style={{ textAlign: 'center' }}>
+                <span className="girando grande" style={{ margin: '8px auto' }} />
+                <h2>{etapaGeracao}</h2>
+                <p className="suave peq">Pode levar até 1 minuto. Não feche esta tela.</p>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      let corpo;
+      if (passo === 'formato') {
+        corpo = <Opcoes valor={e.formato} onEscolher={(v) => proximo('formato', escolher('formato', v))}
+          opcoes={['reels', 'carrossel', 'post_unico', 'serie', 'sequencia_stories', 'story_unico'].map((id) => ({ id, titulo: FORMATOS[id], texto: FORMATOS_INFO[id] }))} />;
+      } else if (passo === 'pilar') {
+        corpo = <Opcoes valor={e.pilar} onEscolher={(v) => proximo('pilar', escolher('pilar', v))}
+          opcoes={Object.entries(PILARES).map(([id, p]) => ({ id, titulo: p.nome, texto: p.objetivo, selo: `KPI: ${p.kpi}` }))} />;
+      } else if (passo === 'estilo') {
+        corpo = <Opcoes valor={e.estilo} onEscolher={(v) => proximo('estilo', escolher('estilo', v))}
+          opcoes={estilosValidos(e.formato, e.pilar).map((id) => ({ id, titulo: ESTILOS[id] }))} />;
+      } else if (passo === 'angulo') {
+        corpo = <Opcoes valor={e.angulo} onEscolher={(v) => proximo('angulo', escolher('angulo', v))}
+          opcoes={Object.entries(ANGULOS).map(([id, titulo]) => ({ id, titulo }))} />;
+      } else if (passo === 'tema') {
+        corpo = (
+          <div className="stack">
+            <div>
+              <label htmlFor="tema-conteudo">Sobre o que é este conteúdo?</label>
+              <textarea id="tema-conteudo" rows="2" placeholder="Ex.: por que o bolo de pote murcha depois de 2 dias" value={e.tema || ''}
+                onChange={(ev) => setE({ ...e, tema: ev.target.value, temaSugeridoPelaIA: false })} />
+              <p className="dica">1 assunto só. Quanto mais específico, melhor o roteiro.</p>
+            </div>
+            <button type="button" className="btn" onClick={sugerirTemas} disabled={buscandoTemas}>
+              {buscandoTemas ? <><span className="girando" /> Pensando em temas...</> : temas ? 'Sugerir outros temas' : 'Sugerir temas'}
+            </button>
+            {temas && (
+              <Opcoes valor={e.temaSugeridoPelaIA ? e.tema : null}
+                onEscolher={(v) => setE({ ...e, tema: v, temaSugeridoPelaIA: true })}
+                opcoes={temas.map((t) => ({ id: t.tema, titulo: t.tema, texto: t.porQue }))} />
+            )}
+            <div className="entre">
+              <span />
+              <button type="button" className="btn primario" onClick={() => (e.tema?.trim()?.length >= 3 ? proximo('tema') : setErro('Escreva o tema ou escolha uma sugestão.'))}>Continuar</button>
+            </div>
+          </div>
+        );
+      } else if (passo === 'framework') {
+        corpo = (
+          <div className="stack">
+            <p className="suave peq">Já vem marcado o que mais combina com o pilar e o estilo. Pode trocar.</p>
+            <Opcoes valor={e.framework} onEscolher={(v) => proximo('framework', escolher('framework', v))}
+              opcoes={Object.entries(FRAMEWORKS).map(([id, texto]) => ({ id, titulo: id, texto, selo: id === frameworkSugerido(e.pilar, e.estilo) ? 'Sugerido' : null }))} />
+          </div>
+        );
+      } else if (passo === 'visual') {
+        corpo = <Opcoes valor={e.formatoVisual} onEscolher={(v) => proximo('visual', escolher('formatoVisual', v))}
+          opcoes={Object.entries(FORMATOS_VISUAIS).map(([id, titulo]) => ({ id, titulo }))} />;
+      } else if (passo === 'cta') {
+        corpo = (
+          <div className="stack-lg">
+            <div>
+              <label htmlFor="cta">Chamada para ação (CTA)</label>
+              <select id="cta" value={e.cta || ''} onChange={(ev) => setE({ ...e, cta: ev.target.value })}>
+                {Object.entries(CTAS).map(([id, t]) => <option key={id} value={id}>{t}{id === ctaSugerido(e.formato, e.pilar, dna?.negocio?.destinoVenda) ? ' (sugerido)' : ''}</option>)}
+              </select>
+              <p className="dica">O CTA nasce do conteúdo: a plataforma escreve a chamada ligada ao que veio antes.</p>
+            </div>
+            {!ehStory && (
+              <div>
+                <label>Estilo de legenda</label>
+                <Opcoes valor={e.estiloLegenda} onEscolher={(v) => setE({ ...e, estiloLegenda: v })}
+                  opcoes={Object.entries(ESTILOS_LEGENDA).map(([id, titulo]) => ({ id, titulo }))} />
+              </div>
+            )}
+            <div className="entre">
+              <span />
+              <button type="button" className="btn primario" onClick={() => (respondido('cta', e) ? proximo('cta') : setErro('Escolha o estilo de legenda.'))}>Continuar</button>
+            </div>
+          </div>
+        );
+      } else {
+        corpo = (
+          <div className="stack">
+            <dl className="dados resumo">
+              {passos.filter((p) => p !== 'revisar').map((p) => (
+                <React.Fragment key={p}>
+                  <dt>{nomesPasso[p]}</dt>
+                  <dd><button type="button" className="btn texto" onClick={() => { setRevisando(true); ir(p); }}>{rotulos[p] || 'escolher'}</button></dd>
+                </React.Fragment>
+              ))}
+              {!ehStory && <><dt>Legenda</dt><dd><button type="button" className="btn texto" onClick={() => { setRevisando(true); ir('cta'); }}>{ESTILOS_LEGENDA[e.estiloLegenda] || 'escolher'}</button></dd></>}
+            </dl>
+            {!ehStory && <p className="suave peq">O roteiro vem com 5 ganchos diferentes para você testar com Reels de teste, e 3 ângulos para contar a mesma história depois.</p>}
+            <button type="button" className="btn primario cheio" onClick={gerar} disabled={passos.some((p) => !respondido(p, e))}>Gerar roteiro</button>
+          </div>
+        );
+      }
+
+      const idx = passos.indexOf(passo);
+      return (
+        <>
+          <Cabecalho>
+            <button className="btn fantasma mini" onClick={onVoltar}>Cancelar</button>
+          </Cabecalho>
+          <main className="wrap conteudo estreito stack-lg">
+            <div className="stack">
+              <span className="sobretitulo">Novo roteiro · passo {idx + 1} de {passos.length}</span>
+              <h1>{{ formato: 'Qual formato?', pilar: 'Qual o objetivo?', estilo: 'Qual estilo de roteiro?', angulo: 'Por qual ângulo?', tema: 'Qual o tema?', framework: 'Qual estrutura?', visual: 'Como vai ser gravado?', cta: 'Como termina?', revisar: 'Tudo certo?' }[passo]}</h1>
+            </div>
+            {idx > 0 && passo !== 'revisar' && (
+              <div className="trilha">
+                {passos.slice(0, idx).map((p) => rotulos[p] && (
+                  <button type="button" key={p} className="chip-trilha" onClick={() => ir(p)} title={`Voltar para ${nomesPasso[p]}`}>
+                    <span>{nomesPasso[p]}</span>{String(rotulos[p]).slice(0, 40)}
+                  </button>
+                ))}
+              </div>
+            )}
+            <section className="cartao"><div className="cartao-corpo">{corpo}</div></section>
+            {erro && <div className="erro" role="alert">{erro}</div>}
+            {idx > 0 && <button type="button" className="btn fantasma" onClick={() => ir(passos[idx - 1])}>Voltar</button>}
+          </main>
+        </>
+      );
+    }
+
+    // ---------- ver o roteiro gerado ----------
+
+    function TextoMarcado({ texto, campo, pendentes }) {
+      const meus = (pendentes || []).filter((p) => p.campo === campo && p.trecho);
+      if (!texto) return null;
+      if (!meus.length) return <>{texto}</>;
+      const partes = [];
+      let resto = texto;
+      let k = 0;
+      while (resto) {
+        let melhor = null;
+        for (const p of meus) {
+          const i = resto.indexOf(p.trecho);
+          if (i >= 0 && (!melhor || i < melhor.i)) melhor = { i, p };
+        }
+        if (!melhor) { partes.push(resto); break; }
+        partes.push(resto.slice(0, melhor.i));
+        partes.push(<mark className="cara-de-ia" key={k++} title="Trecho com cara de IA, reescreva com suas palavras">{melhor.p.trecho}</mark>);
+        resto = resto.slice(melhor.i + melhor.p.trecho.length);
+      }
+      return <>{partes}</>;
+    }
+
+    function roteiroParaTexto(r) {
+      const c = r.conteudo || {};
+      const l = [];
+      if (c.nomeSerie) l.push(`${c.nomeSerie} · parte ${r.parteSerie} de ${c.totalPartes}`, '');
+      if (c.bigIdea) l.push(`Ideia central: ${c.bigIdea}`, '');
+      (c.blocos || []).forEach((b) => {
+        l.push(`[${b.tempo}] ${TIPOS_BLOCO[b.tipo] || b.tipo}`, `Fala: ${b.fala}`, `Mostrar: ${b.visual}`);
+        if (b.textoTela) l.push(`Texto na tela: ${b.textoTela}`);
+        l.push('');
+      });
+      (c.slides || []).forEach((s) => l.push(`Slide ${s.n}: ${s.texto}`, `Visual: ${s.visual}`, ''));
+      if (c.arte) l.push(`Headline: ${c.arte.headline}`, `Apoio: ${c.arte.apoio}`, `Visual: ${c.arte.visual}`, '');
+      if (c.objetivoSequencia) l.push(`Objetivo: ${c.objetivoSequencia}`, '');
+      (c.frames || []).forEach((f) => { l.push(`Frame ${f.n} (${TIPOS_FRAME[f.tipo] || f.tipo}): ${f.conteudo}`, `Visual: ${f.visual}`); if (f.interacao) l.push(`Interação: ${f.interacao}`); l.push(''); });
+      if (c.ganchos?.length) {
+        l.push('5 ganchos para testar:');
+        c.ganchos.forEach((g) => l.push(`${g.n}. ${g.texto}${g.textoTela ? ` (tela: ${g.textoTela})` : ''}`));
+        l.push('');
+      }
+      if (c.notaProducao) l.push(`Nota de produção: ${c.notaProducao}`, '');
+      return l.join('\n').trim();
+    }
+
+    function VerRoteiro({ uid, id, onVoltar, onAbrir }) {
+      const [r, setR] = useState(undefined);
+      const [proximaParte, setProximaParte] = useState(null);
+      const [gerandoParte, setGerandoParte] = useState(false);
+      useEffect(() => db.doc(`clientes/${uid}/roteiros/${id}`).onSnapshot((s) => setR(s.exists ? { id: s.id, ...s.data() } : null), () => setR(null)), [uid, id]);
+      useEffect(() => {
+        if (!r?.serieId) return;
+        return db.collection(`clientes/${uid}/roteiros`).where('serieId', '==', r.serieId).onSnapshot((s) => {
+          const partes = s.docs.map((d) => d.data().parteSerie);
+          setProximaParte(Math.max(...partes) === r.parteSerie && r.parteSerie < r.conteudo.totalPartes ? r.parteSerie + 1 : null);
+        });
+      }, [uid, r?.serieId, r?.parteSerie]);
+
+      if (r === undefined) return <Carregando />;
+      if (r === null) return <div className="tela-centro"><div className="stack" style={{ textAlign: 'center' }}><p>Não encontrei esse roteiro.</p><button className="btn" onClick={onVoltar}>Voltar</button></div></div>;
+
+      const c = r.conteudo || {};
+      const pend = r.trava?.pendentes || [];
+      const M = (texto, campo) => <TextoMarcado texto={texto} campo={campo} pendentes={pend} />;
+      const copiarTexto = async (t, msg) => toast((await copiar(t)) ? msg : 'Não consegui copiar. Selecione e copie à mão.');
+
+      async function gerarProxima() {
+        setGerandoParte(true);
+        try {
+          const nova = await chamar('gerarRoteiro', { continuarSerie: r.serieId }, { timeout: 540000 });
+          onAbrir(nova.id);
+        } catch (e) {
+          toast(mensagemErro(e));
+        }
+        setGerandoParte(false);
+      }
+
+      return (
+        <>
+          <Cabecalho>
+            <button className="btn fantasma mini" onClick={onVoltar}>Voltar</button>
+          </Cabecalho>
+          <main className="wrap conteudo estreito stack-lg">
+            <div className="stack">
+              <span className="sobretitulo">{FORMATOS[r.formato]}{c.nomeSerie ? ` · ${c.nomeSerie} · parte ${r.parteSerie} de ${c.totalPartes}` : ''}</span>
+              <h1>{r.tema}</h1>
+              <div className="etiquetas-roteiro">
+                <span>{PILARES[r.pilar]?.nome}</span><span>{ESTILOS[r.estilo]}</span><span>{ANGULOS[r.angulo]}</span><span>{r.framework}</span>
+                {r.formatoVisual && <span>{FORMATOS_VISUAIS[r.formatoVisual]}</span>}
+                {r.duracaoEstimadaSeg ? <span>cerca de {r.duracaoEstimadaSeg}s</span> : null}
+              </div>
+            </div>
+
+            {(r.avisos || []).map((a) => <div className="aviso" key={a}>{a}</div>)}
+            {pend.length > 0 && (
+              <div className="aviso">
+                <strong>{pend.length === 1 ? '1 trecho marcado' : `${pend.length} trechos marcados`} com cara de IA.</strong> Reescreva com as suas palavras antes de gravar ou postar.
+              </div>
+            )}
+
+            {c.bigIdea && (
+              <section className="ideia">
+                <span className="sobretitulo">Ideia central</span>
+                <p>{M(c.bigIdea, 'bigIdea')}</p>
+              </section>
+            )}
+
+            {c.blocos && (
+              <section className="stack">
+                <div className="legenda-cores"><span className="cor-fala">Falar</span><span className="cor-visual">Mostrar</span><span className="cor-tela">Texto na tela</span></div>
+                {c.blocos.map((b, i) => (
+                  <article className="bloco" key={i}>
+                    <header><strong>{TIPOS_BLOCO[b.tipo] || b.tipo}</strong><span className="num">{b.tempo}</span></header>
+                    <p className="fala">{M(b.fala, `blocos.${i}.fala`)}</p>
+                    <p className="visual">{M(b.visual, `blocos.${i}.visual`)}</p>
+                    {b.textoTela && <p className="na-tela">{M(b.textoTela, `blocos.${i}.textoTela`)}</p>}
+                  </article>
+                ))}
+              </section>
+            )}
+
+            {c.slides && (
+              <section className="stack">
+                {c.slides.map((s, i) => (
+                  <article className="bloco" key={i}>
+                    <header><strong>Slide {s.n}</strong>{i === 0 && <span>capa</span>}{i === c.slides.length - 1 && <span>CTA</span>}</header>
+                    <p className="fala">{M(s.texto, `slides.${i}.texto`)}</p>
+                    <p className="visual">{M(s.visual, `slides.${i}.visual`)}</p>
+                  </article>
+                ))}
+              </section>
+            )}
+
+            {c.arte && (
+              <article className="bloco">
+                <header><strong>Arte</strong></header>
+                <p className="fala titulo-arte">{M(c.arte.headline, 'arte.headline')}</p>
+                <p className="fala">{M(c.arte.apoio, 'arte.apoio')}</p>
+                <p className="visual">{M(c.arte.visual, 'arte.visual')}</p>
+              </article>
+            )}
+
+            {c.frames && (
+              <section className="stack">
+                {c.objetivoSequencia && <p className="suave">{M(c.objetivoSequencia, 'objetivoSequencia')}</p>}
+                {c.frames.map((f, i) => (
+                  <article className="bloco" key={i}>
+                    <header><strong>Frame {f.n}</strong><span>{TIPOS_FRAME[f.tipo] || f.tipo}</span></header>
+                    <p className="fala">{M(f.conteudo, `frames.${i}.conteudo`)}</p>
+                    <p className="visual">{M(f.visual, `frames.${i}.visual`)}</p>
+                    {f.interacao && <p className="na-tela">{M(f.interacao, `frames.${i}.interacao`)}</p>}
+                  </article>
+                ))}
+              </section>
+            )}
+
+            {c.ganchos?.length > 0 && (
+              <section className="cartao">
+                <div className="faixa" />
+                <div className="cartao-corpo stack">
+                  <span className="sobretitulo">Teste de ganchos</span>
+                  <h2>5 ganchos para testar</h2>
+                  <p className="suave peq">
+                    {['reels', 'serie'].includes(r.formato)
+                      ? 'Grave o vídeo inteiro com o gancho 1. Depois grave só os 3 primeiros segundos com cada um dos outros e publique as 5 versões como Reels de teste.'
+                      : r.formato === 'carrossel' ? 'São 5 capas diferentes para o slide 1. Teste uma por vez e mude só a capa.' : 'São 5 headlines diferentes. Teste uma por vez e mude só a headline.'}
+                  </p>
+                  {c.ganchos.map((g, i) => (
+                    <div className="gancho" key={i}>
+                      <div className="gancho-n">{g.n}</div>
+                      <div className="gancho-corpo">
+                        <span className="sobretitulo">{TIPOS_GANCHO[g.tipo] || g.tipo}</span>
+                        <p className="fala">{M(g.texto, `ganchos.${i}.texto`)}</p>
+                        {g.textoTela && <p className="na-tela">{M(g.textoTela, `ganchos.${i}.textoTela`)}</p>}
+                        {g.visual && <p className="visual">{M(g.visual, `ganchos.${i}.visual`)}</p>}
+                        <div><button type="button" className="btn mini" onClick={() => copiarTexto(g.texto, `Gancho ${g.n} copiado.`)}>Copiar gancho {g.n}</button></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {c.angulosParaTestar?.length > 0 && (
+              <section className="stack">
+                <h3>Mesma história, outros ângulos</h3>
+                <p className="suave peq">Para os próximos testes. Mude só o ângulo e mantenha o resto, assim você sabe o que fez diferença.</p>
+                <ul className="regras">
+                  {c.angulosParaTestar.map((a, i) => (
+                    <li key={i}><strong>{ANGULOS[a.angulo] || a.angulo}.</strong> {M(a.ideia, `angulosParaTestar.${i}.ideia`)}</li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {r.legenda && (
+              <section className="stack">
+                <div className="entre"><h3>Legenda</h3><button className="btn mini" onClick={() => copiarTexto(r.legenda, 'Legenda copiada.')}>Copiar legenda</button></div>
+                <p className="legenda-texto">{M(r.legenda, 'legenda')}</p>
+              </section>
+            )}
+
+            {c.notaProducao && <div className="nota"><span className="sobretitulo">Nota de produção</span><p>{M(c.notaProducao, 'notaProducao')}</p></div>}
+
+            <div className="barra-acoes">
+              {proximaParte && (
+                <button className="btn" onClick={gerarProxima} disabled={gerandoParte}>
+                  {gerandoParte ? <><span className="girando" /> Escrevendo a parte {proximaParte}...</> : `Gerar parte ${proximaParte}`}
+                </button>
+              )}
+              <button className="btn primario" onClick={() => copiarTexto(roteiroParaTexto(r), 'Roteiro copiado.')}>Copiar roteiro</button>
+            </div>
+          </main>
+        </>
+      );
+    }
+
+    function RoteirosRecentes({ uid, onAbrir }) {
+      const [lista, setLista] = useState(null);
+      useEffect(() => db.collection(`clientes/${uid}/roteiros`).orderBy('criadoEm', 'desc').limit(8).onSnapshot(
+        (s) => setLista(s.docs.map((d) => ({ id: d.id, ...d.data() }))), () => setLista([])
+      ), [uid]);
+      if (!lista?.length) return null;
+      return (
+        <section className="stack">
+          <h2>Seus últimos roteiros</h2>
+          <div className="lista-roteiros">
+            {lista.map((r) => (
+              <button type="button" key={r.id} className="item-roteiro" onClick={() => onAbrir(r.id)}>
+                <span className="sobretitulo">{FORMATOS[r.formato]} · {r.pilar}{r.parteSerie ? ` · parte ${r.parteSerie}` : ''}</span>
+                <strong>{r.tema}</strong>
+                {r.trava && !r.trava.passou && <span className="selo alerta">trechos para revisar</span>}
+              </button>
+            ))}
+          </div>
+        </section>
+      );
+    }
+
     function InicioCliente({ cliente }) {
       const dna = useDna(cliente.id);
       const [tela, setTela] = useState('inicio');
+      const [roteiroId, setRoteiroId] = useState(null);
+      const abrir = (id) => { setRoteiroId(id); setTela('roteiro'); window.scrollTo(0, 0); };
 
       if (dna === undefined) return <Carregando />;
       const falta = faltandoNoDna(dna);
       if (!dna?.onboardingConcluido) return <Onboarding uid={cliente.id} cliente={cliente} dna={dna} />;
       if (tela === 'perfil') return <MeuPerfil uid={cliente.id} dna={dna} onVoltar={() => setTela('inicio')} />;
+      if (tela === 'criar' && !falta.length) return <CriarRoteiro dna={dna} onPronto={abrir} onVoltar={() => setTela('inicio')} />;
+      if (tela === 'roteiro') return <VerRoteiro uid={cliente.id} id={roteiroId} onVoltar={() => setTela('inicio')} onAbrir={abrir} />;
 
       return (
         <>
@@ -1419,15 +1989,16 @@
                   </div>
                 ) : (
                   <p className="suave" style={{ maxWidth: 560 }}>
-                    Seu perfil de voz está pronto. A criação de roteiros chega na próxima atualização da plataforma.
+                    Escolha o formato, o objetivo e o tema: o roteiro sai com a sua voz e com 5 ganchos para testar.
                   </p>
                 )}
                 <div className="linha">
-                  <button className="btn primario" disabled title={falta.length ? 'Complete seu perfil primeiro' : 'Disponível na próxima atualização'}>Criar roteiro</button>
+                  <button className="btn primario" disabled={falta.length > 0} onClick={() => setTela('criar')} title={falta.length ? 'Complete seu perfil primeiro' : ''}>Criar roteiro</button>
                   <button className="btn" onClick={() => setTela('perfil')}>Ver meu perfil</button>
                 </div>
               </div>
             </div>
+            <RoteirosRecentes uid={cliente.id} onAbrir={abrir} />
             <GuiaDeTeste crescimento={cliente.crescimento} />
           </main>
         </>

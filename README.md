@@ -8,7 +8,7 @@ Frontend em um único `index.html` (React + Babel via CDN, no Netlify) e backend
 
 - [x] **Fase 1: base, acesso e admin**
 - [x] Fase 2: DNA do perfil
-- [ ] Fase 3: geração + trava anti-linguagem de IA (trava já pronta e testada)
+- [x] Fase 3: geração + trava anti-linguagem de IA
 - [ ] Fase 4: editor
 - [ ] Fase 5: postado, métricas e diagnóstico
 - [ ] Fase 6: lembretes (PWA + push)
@@ -87,6 +87,20 @@ e do cabeçalho. Logo em `assets/logo-visions.png`.
 - Trava anti-IA (`functions/ia/travaAntiIA.js`): validação com acentos/maiúsculas normalizados,
   heurísticas, palavras proibidas do cliente, loop de até 2 reescritas, correção automática do
   travessão e registro em `logs/trava/registros`.
+
+## Fase 3: geração
+
+- Wizard da seção 8.1 (formato, pilar, estilo válido para formato + pilar, ângulo, tema com
+  "Sugerir temas", framework pré-selecionado, formato visual, CTA e estilo de legenda, revisar).
+- `sugerirTemas` e `gerarRoteiro` (callables). JSON estruturado por formato (`functions/ia/esquemas.js`),
+  conferência de contagens com 1 nova tentativa, trava com até 2 reescritas, regra de 90s
+  (reels/série de P1 e P2: refaz pedindo corte para 70s; se continuar longo, salva com aviso).
+- Reels, série, carrossel e post único saem com 5 ganchos e 3 ângulos para testar.
+- Série: gera a parte 1; a parte N só sai depois da N-1 ("Gerar parte N" na tela do roteiro).
+- Contexto de aprendizado: formato vencedor (admin), últimos diagnósticos e melhores posts
+  (entram de verdade quando a Fase 5 começar a gravar métricas), últimos 10 ganchos.
+- Tela do roteiro: fala, "mostrar" e "texto na tela" em cores diferentes, trechos com cara de IA
+  sublinhados, copiar roteiro/legenda/gancho.
 
 ## Rodar local e testar
 
