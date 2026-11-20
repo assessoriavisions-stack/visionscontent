@@ -140,6 +140,20 @@ test('fluxo completo de acesso e bloqueio', async (t) => {
     await deleteApp(D.app);
   });
 
+  await t.test('fase de crescimento: admin define, cliente só lê', async () => {
+    const antes = (await getDoc(doc(A.db, 'clientes', uid))).data();
+    assert.equal(antes.crescimento.fase, 'testes');
+    await negado(A.chamar('adminAtualizarCliente', { uid, crescimento: { fase: 'vencedor_definido', vencedor: {} } }), 'invalid-argument');
+    await negado(A.chamar('adminAtualizarCliente', { uid, crescimento: { fase: 'vencedor_definido', vencedor: { formato: 'tiktok' } } }), 'invalid-argument');
+    await A.chamar('adminAtualizarCliente', { uid, crescimento: { fase: 'vencedor_definido', vencedor: { formato: 'reels', formatoVisual: 'talking_head', tipoGancho: 'afirmacao_forte', observacao: 'vídeos curtos' } } });
+    const depois = (await getDoc(doc(C.db, 'clientes', uid))).data();
+    assert.equal(depois.crescimento.vencedor.formato, 'reels');
+    assert.equal(depois.crescimento.vencedor.angulo, null);
+    await negado(updateDoc(doc(C.db, 'clientes', uid), { 'crescimento.fase': 'testes' }));
+    await A.chamar('adminAtualizarCliente', { uid, crescimento: { fase: 'testes' } });
+    assert.equal((await getDoc(doc(C.db, 'clientes', uid))).data().crescimento.vencedor, null);
+  });
+
   await deleteApp(C.app);
   await deleteApp(A.app);
 });

@@ -222,6 +222,22 @@
     .boas-vindas { padding: 28px 22px; }
     @media (min-width: 560px) { .boas-vindas { padding: 40px; } }
     .boas-vindas h1 em { font-style: italic; color: var(--azul); }
+
+    /* Fase de crescimento */
+    .selo.testes { background: var(--azul-claro); color: var(--azul); }
+    .selo.vencedor { background: var(--amarelo-claro); color: #8A6400; }
+    .secao-form { border-top: 1px solid var(--linha-2); padding-top: 18px; }
+    .guia { padding: 24px 22px; }
+    @media (min-width: 560px) { .guia { padding: 32px 40px; } }
+    .passos { list-style: none; margin: 0; padding: 0; counter-reset: passo; }
+    .passos li { counter-increment: passo; position: relative; padding: 14px 0 14px 46px; border-top: 1px solid var(--linha-2); }
+    .passos li:first-child { border-top: 0; }
+    .passos li::before { content: counter(passo); position: absolute; left: 0; top: 13px; width: 30px; height: 30px; border-radius: 50%; background: var(--tinta); color: var(--marfim); display: grid; place-items: center; font-family: var(--serifa); font-size: 15px; }
+    .passos strong, .regras strong { color: var(--tinta); font-weight: 600; }
+    .regras { display: grid; gap: 10px; grid-template-columns: 1fr; margin: 0; padding: 0; list-style: none; }
+    @media (min-width: 720px) { .regras { grid-template-columns: 1fr 1fr; } }
+    .regras li { background: var(--superficie-2); border: 1px solid var(--linha); border-radius: var(--raio-sm); padding: 14px 16px; font-size: 14px; color: var(--tinta-2); }
+    .destaque-vencedor { background: var(--amarelo-claro); border: 1px solid #F6E3A8; border-radius: var(--raio-sm); padding: 16px 18px; }
   </style>
 </head>
 <body>
@@ -247,6 +263,18 @@
     const FUSO = 'America/Sao_Paulo';
     const MSG_SUSPENSO = 'Seu acesso está suspenso. Fale com a Visions.';
     const LOGO = 'assets/logo-visions.png';
+
+    // Catálogos (mesmos ids de functions/ia/catalogos.js)
+    const FORMATOS = { carrossel: 'Carrossel', post_unico: 'Post único', story_unico: 'Story único', sequencia_stories: 'Sequência de stories', reels: 'Reels', serie: 'Série' };
+    const FORMATOS_VISUAIS = { talking_head: 'Talking head', vlog: 'Vlog / daily', tela_dividida: 'Tela dividida', storytelling_broll: 'Storytelling com b-roll', pov: 'POV', react: 'React / comentário de caso', tutorial_tela: 'Tutorial em tela' };
+    const ANGULOS = { erro_comum: 'Erro comum', maior_desejo: 'Maior desejo', mito_industria: 'Mito da indústria', historia_pessoal: 'História pessoal', duvida_comum: 'Dúvida comum', passo_a_passo: 'Passo a passo' };
+    const TIPOS_GANCHO = { situacao_especifica: 'Situação específica', dado_contraintuitivo: 'Dado que contraria o senso comum', afirmacao_forte: 'Afirmação forte', metafora: 'Metáfora que pede explicação', erro_comum: 'Erro comum de quem assiste' };
+
+    function resumoVencedor(v) {
+      if (!v) return '';
+      return [FORMATOS[v.formato], FORMATOS_VISUAIS[v.formatoVisual], ANGULOS[v.angulo], v.tipoGancho && 'gancho: ' + TIPOS_GANCHO[v.tipoGancho].toLowerCase()]
+        .filter(Boolean).join(' · ');
+    }
 
     firebase.initializeApp(FIREBASE_CONFIG);
     const auth = firebase.auth();
@@ -517,6 +545,12 @@
         perfilInstagram: cliente?.perfilInstagram || '',
         venceEm: paraISO(cliente?.venceEm),
         limiteGeracoesMes: cliente?.limiteGeracoesMes ?? '',
+        fase: cliente?.crescimento?.fase || 'testes',
+        vFormato: cliente?.crescimento?.vencedor?.formato || '',
+        vFormatoVisual: cliente?.crescimento?.vencedor?.formatoVisual || '',
+        vAngulo: cliente?.crescimento?.vencedor?.angulo || '',
+        vTipoGancho: cliente?.crescimento?.vencedor?.tipoGancho || '',
+        vObs: cliente?.crescimento?.vencedor?.observacao || '',
       });
       const [erro, setErro] = useState('');
       const [salvando, setSalvando] = useState(false);
@@ -527,6 +561,7 @@
         setErro('');
         if (!f.nome.trim()) return setErro('Preencha o nome.');
         if (!editando && !f.email.trim()) return setErro('Preencha o e-mail.');
+        if (editando && f.fase === 'vencedor_definido' && !f.vFormato) return setErro('Escolha pelo menos o formato vencedor.');
         setSalvando(true);
         const base = {
           nome: f.nome,
@@ -536,7 +571,14 @@
         };
         try {
           if (editando) {
-            await chamar('adminAtualizarCliente', { uid: cliente.id, ...base });
+            const crescimento = f.fase === 'testes'
+              ? { fase: 'testes' }
+              : { fase: 'vencedor_definido', vencedor: { formato: f.vFormato, formatoVisual: f.vFormatoVisual || null, angulo: f.vAngulo || null, tipoGancho: f.vTipoGancho || null, observacao: f.vObs } };
+            const mudouFase = JSON.stringify(crescimento) !== JSON.stringify(
+              cliente.crescimento?.fase === 'vencedor_definido'
+                ? { fase: 'vencedor_definido', vencedor: { formato: cliente.crescimento.vencedor?.formato || '', formatoVisual: cliente.crescimento.vencedor?.formatoVisual || null, angulo: cliente.crescimento.vencedor?.angulo || null, tipoGancho: cliente.crescimento.vencedor?.tipoGancho || null, observacao: cliente.crescimento.vencedor?.observacao || '' } }
+                : { fase: 'testes' });
+            await chamar('adminAtualizarCliente', { uid: cliente.id, ...base, ...(mudouFase ? { crescimento } : {}) });
             toast('Cliente atualizado.');
             onFechar();
           } else {
@@ -577,6 +619,62 @@
                 <p className="dica">Controle de custo. Em branco: sem limite.</p>
               </div>
             </div>
+            {editando && (
+              <div className="secao-form stack">
+                <div>
+                  <span className="sobretitulo">Fase de crescimento</span>
+                  <p className="dica" style={{ marginTop: 4 }}>
+                    No começo o cliente testa formatos. Quando você identificar o que funciona para ele, marque o vencedor:
+                    a plataforma passa a priorizar esse caminho.
+                  </p>
+                </div>
+                <div>
+                  <label htmlFor="f-fase">Fase</label>
+                  <select id="f-fase" value={f.fase} onChange={mudar('fase')}>
+                    <option value="testes">Testando formatos</option>
+                    <option value="vencedor_definido">Formato vencedor definido</option>
+                  </select>
+                </div>
+                {f.fase === 'vencedor_definido' && (
+                  <>
+                    <div className="duas">
+                      <div>
+                        <label htmlFor="f-vformato">Formato</label>
+                        <select id="f-vformato" value={f.vFormato} onChange={mudar('vFormato')}>
+                          <option value="">Escolha</option>
+                          {Object.entries(FORMATOS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label htmlFor="f-vvisual">Formato visual</label>
+                        <select id="f-vvisual" value={f.vFormatoVisual} onChange={mudar('vFormatoVisual')}>
+                          <option value="">Não definido</option>
+                          {Object.entries(FORMATOS_VISUAIS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label htmlFor="f-vangulo">Ângulo</label>
+                        <select id="f-vangulo" value={f.vAngulo} onChange={mudar('vAngulo')}>
+                          <option value="">Não definido</option>
+                          {Object.entries(ANGULOS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label htmlFor="f-vgancho">Tipo de gancho</label>
+                        <select id="f-vgancho" value={f.vTipoGancho} onChange={mudar('vTipoGancho')}>
+                          <option value="">Não definido</option>
+                          {Object.entries(TIPOS_GANCHO).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label htmlFor="f-vobs">Observação para o cliente</label>
+                      <input id="f-vobs" placeholder="Ex.: vídeos curtos com bastidor da cozinha funcionam melhor" value={f.vObs} onChange={mudar('vObs')} />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
             {erro && <div className="erro" role="alert">{erro}</div>}
             <button className="btn primario cheio" disabled={salvando}>
               {salvando ? <><span className="girando" /> Salvando...</> : editando ? 'Salvar alterações' : 'Criar cliente'}
@@ -658,6 +756,12 @@
           </div>
 
           <dl className="dados">
+            <dt>Fase</dt>
+            <dd>
+              {c.crescimento?.fase === 'vencedor_definido'
+                ? <><span className="selo vencedor">Vencedor definido</span><div className="suave peq" style={{ marginTop: 4 }}>{resumoVencedor(c.crescimento.vencedor)}</div></>
+                : <span className="selo testes">Testando formatos</span>}
+            </dd>
             <dt>E-mail</dt><dd>{c.email}</dd>
             <dt>Vencimento</dt>
             <dd>
@@ -803,13 +907,69 @@
     // ==========================================================
     // Área do cliente (Fase 1: só a entrada; DNA e geração vêm nas próximas fases)
     // ==========================================================
+    // Guia operacional da fase de testes. Texto revisado contra a lista da trava anti-IA.
+    function GuiaDeTeste({ crescimento }) {
+      const vencedor = crescimento?.fase === 'vencedor_definido' ? crescimento.vencedor : null;
+      return (
+        <section className="cartao">
+          <div className="faixa" />
+          <div className="guia stack-lg">
+            <div className="stack">
+              <span className="sobretitulo">{vencedor ? 'Seu formato vencedor' : 'Fase atual: testando formatos'}</span>
+              <h2>{vencedor ? 'Você já achou o que funciona para o seu perfil' : 'Como crescer no começo: testando formatos'}</h2>
+              {vencedor ? (
+                <div className="destaque-vencedor">
+                  <strong>{resumoVencedor(vencedor)}</strong>
+                  {vencedor.observacao && <p style={{ marginTop: 6 }}>{vencedor.observacao}</p>}
+                  <p className="peq suave" style={{ marginTop: 8 }}>
+                    Seus próximos roteiros vão priorizar esse caminho. Continue testando ganchos em todo conteúdo, porque o gancho é o que mais muda o alcance.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <p className="suave">
+                    No começo ainda não dá para saber qual formato funciona melhor para o seu perfil. Por isso a primeira fase é de teste.
+                    Alguns conteúdos vão bater 1 visualização. Outros vão viralizar e trazer seguidores. Faz parte do processo:
+                    cada resultado anotado aqui mostra o caminho até o seu formato vencedor.
+                  </p>
+                  <p className="suave">A equipe da Visions acompanha seus números e avisa quando o vencedor aparecer.</p>
+                </>
+              )}
+            </div>
+
+            <div className="stack">
+              <h3>Como testar cada conteúdo</h3>
+              <ol className="passos">
+                <li><strong>Grave o vídeo inteiro uma vez</strong> com o primeiro gancho. Todo roteiro vem com 5 ganchos diferentes.</li>
+                <li><strong>Grave só os 3 primeiros segundos</strong> com cada um dos outros 4 ganchos e monte 5 versões do mesmo vídeo.</li>
+                <li><strong>Publique as versões como Reels de teste.</strong> Na tela de compartilhar do Reels, ative a opção de teste: o vídeo aparece primeiro para quem ainda não te segue. A opção aparece em contas profissionais (criador ou empresa).</li>
+                <li><strong>Espere de 24 a 72 horas</strong> e compare as visualizações e a retenção nos 3 primeiros segundos de cada versão.</li>
+                <li><strong>Compartilhe a melhor versão com seus seguidores</strong> e registre aqui qual gancho venceu.</li>
+                <li><strong>Se nenhum gancho performar</strong>, abra a retenção do vídeo no Instagram, veja o segundo em que a visualização caiu e mude o roteiro só naquele trecho. Depois teste de novo.</li>
+              </ol>
+            </div>
+
+            <div className="stack">
+              <h3>Regras para o teste dar resposta</h3>
+              <ul className="regras">
+                <li><strong>Mude 1 coisa por vez.</strong> Se trocar o gancho e o formato juntos, você não descobre qual dos dois fez diferença.</li>
+                <li><strong>1 assunto por conteúdo.</strong> Dois temas no mesmo vídeo dividem a atenção e derrubam a retenção.</li>
+                <li><strong>Para crescer a base, no máximo 1min30.</strong> Conteúdos mais longos ficam para menos vezes, quando o objetivo for aprofundar.</li>
+                <li><strong>Reaproveite a cada 3 meses.</strong> Postando com constância, chega gente nova o tempo todo: o conteúdo que foi bem volta com um gancho novo.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
     function InicioCliente({ cliente }) {
       return (
         <>
           <Cabecalho>
             <button className="btn fantasma mini" onClick={() => auth.signOut()}>Sair</button>
           </Cabecalho>
-          <main className="wrap conteudo">
+          <main className="wrap conteudo stack-lg">
             <div className="cartao">
               <div className="boas-vindas stack">
                 <span className="sobretitulo">Sua área</span>
@@ -819,6 +979,7 @@
                 </p>
               </div>
             </div>
+            <GuiaDeTeste crescimento={cliente.crescimento} />
           </main>
         </>
       );

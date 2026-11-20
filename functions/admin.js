@@ -5,6 +5,7 @@ const { db, auth, FieldValue, Timestamp } = require('./lib/firebase');
 const { callableAdmin, bloquearCliente, OPCOES_PADRAO } = require('./lib/middleware');
 const { mesReferencia, fimDoDiaBRT, FUSO } = require('./lib/tempo');
 const seed = require('./config/seedPadrao');
+const cat = require('./ia/catalogos');
 
 // ---------- validação de entrada ----------
 
@@ -41,6 +42,28 @@ function limite(v) {
 
 function perfil(v) {
   return texto(v, 'perfil do Instagram', { max: 60 }).replace(/^@+/, '');
+}
+
+// Fase de crescimento: o admin decide quando o cliente sai dos testes e qual é o formato vencedor.
+function crescimento(v) {
+  if (!v || typeof v !== 'object') throw new HttpsError('invalid-argument', 'Dados da fase de crescimento inválidos.');
+  if (!(v.fase in cat.FASES_CRESCIMENTO)) throw new HttpsError('invalid-argument', 'Escolha a fase: testando formatos ou vencedor definido.');
+  if (v.fase === 'testes') return { fase: 'testes', vencedor: null };
+  const w = v.vencedor || {};
+  const opcional = (valor, lista, nomeCampo) => {
+    if (valor === null || valor === undefined || valor === '') return null;
+    if (!(valor in lista)) throw new HttpsError('invalid-argument', `Valor inválido em ${nomeCampo}.`);
+    return valor;
+  };
+  const vencedor = {
+    formato: opcional(w.formato, cat.FORMATOS, 'formato'),
+    formatoVisual: opcional(w.formatoVisual, cat.FORMATOS_VISUAIS, 'formato visual'),
+    angulo: opcional(w.angulo, cat.ANGULOS, 'ângulo'),
+    tipoGancho: opcional(w.tipoGancho, cat.TIPOS_GANCHO, 'tipo de gancho'),
+    observacao: texto(w.observacao, 'observação', { max: 500 }),
+  };
+  if (!vencedor.formato) throw new HttpsError('invalid-argument', 'Escolha pelo menos o formato vencedor.');
+  return { fase: 'vencedor_definido', vencedor };
 }
 
 function uidValido(v) {
@@ -99,6 +122,7 @@ exports.adminCriarCliente = callableAdmin(async ({ data }) => {
       criadoEm: FieldValue.serverTimestamp(),
       bloqueadoEm: null,
       fcmTokens: [],
+      crescimento: { fase: 'testes', vencedor: null, definidoEm: null },
     });
   } catch (e) {
     // Não deixa login órfão sem documento.
@@ -117,6 +141,9 @@ exports.adminAtualizarCliente = callableAdmin(async ({ data }) => {
   if ('perfilInstagram' in data) mudancas.perfilInstagram = perfil(data.perfilInstagram);
   if ('venceEm' in data) mudancas.venceEm = vencimento(data.venceEm);
   if ('limiteGeracoesMes' in data) mudancas.limiteGeracoesMes = limite(data.limiteGeracoesMes);
+  if ('crescimento' in data) {
+    mudancas.crescimento = { ...crescimento(data.crescimento), definidoEm: FieldValue.serverTimestamp() };
+  }
   if (!Object.keys(mudancas).length) return { ok: true };
 
   await ref.update(mudancas);
