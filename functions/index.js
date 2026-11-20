@@ -1,0 +1,20 @@
+// Ponto de entrada das Cloud Functions da Plataforma de Roteiros Visions.
+const admin = require('./admin');
+
+// Fase 1: acesso e admin
+exports.adminCriarCliente = admin.adminCriarCliente;
+exports.adminAtualizarCliente = admin.adminAtualizarCliente;
+exports.adminBloquearCliente = admin.adminBloquearCliente;
+exports.adminDesbloquearCliente = admin.adminDesbloquearCliente;
+exports.adminRedefinirSenha = admin.adminRedefinirSenha;
+exports.adminInicializarConfig = admin.adminInicializarConfig;
+exports.verificarVencimentos = admin.verificarVencimentos;
+exports.resetarContadorMensal = admin.resetarContadorMensal;
+
+// Callable mínima usada para verificar o middleware do cliente (status ativo).
+// As próximas fases trocam isto pelas functions reais (gerarRoteiro etc.).
+const { callableCliente } = require('./lib/middleware');
+exports.clienteVerificarAcesso = callableCliente(async (_req, { cliente }) => ({
+  ok: true,
+  nome: cliente.nome,
+}));

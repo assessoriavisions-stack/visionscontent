@@ -1,0 +1,85 @@
+rules_version = '2';
+
+// Plataforma de Roteiros Visions
+// - admin: custom claim admin == true
+// - cliente: lê/escreve só os próprios dados, e só enquanto clientes/{uid}.status == "ativo"
+// - conteúdo gerado pela IA, status, limites e diagnósticos são escritos só pelas Cloud Functions (Admin SDK)
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function logado() { return request.auth != null; }
+    function isAdmin() { return logado() && request.auth.token.admin == true; }
+    function isDono(uid) { return logado() && request.auth.uid == uid; }
+    function clienteAtivo(uid) {
+      return get(/databases/$(database)/documents/clientes/$(uid)).data.status == "ativo";
+    }
+    // O cliente só acessa os próprios dados enquanto estiver ativo.
+    function podeAcessar(uid) { return isDono(uid) && clienteAtivo(uid); }
+
+    function mudou() { return request.resource.data.diff(resource.data).affectedKeys(); }
+    function naoMexeEm(campos) { return !mudou().hasAny(campos); }
+
+    // ---------- config e logs: só admin ----------
+    match /config/{doc} {
+      allow read, write: if isAdmin();
+    }
+    match /logs/{caminho=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // ---------- clientes ----------
+    match /clientes/{uid} {
+      allow read: if isAdmin() || podeAcessar(uid);
+      // Criação, status, vencimento, limite e contador passam pelas functions.
+      // O cliente só pode atualizar os próprios tokens de push.
+      allow update: if podeAcessar(uid) && mudou().hasOnly(['fcmTokens']);
+      allow create, delete: if false;
+
+      // Leitura do admin em qualquer subcoleção.
+      match /{sub}/{docId} {
+        allow read: if isAdmin();
+      }
+
+      match /dna/{docId} {
+        allow read, write: if podeAcessar(uid);
+      }
+
+      match /roteiros/{id} {
+        allow read: if podeAcessar(uid);
+        // Criado pela function gerarRoteiro.
+        allow create: if false;
+        // Edição do cliente no editor; status "postado"/"medido" e a trava ficam com as functions.
+        allow update: if podeAcessar(uid)
+          && naoMexeEm(['trava', 'criadoEm', 'formato', 'pilar', 'campanhaId', 'serieId', 'parteSerie', 'temaSugeridoPelaIA'])
+          && request.resource.data.status in ['rascunho', 'pronto']
+          && resource.data.status in ['rascunho', 'pronto'];
+        allow delete: if podeAcessar(uid) && resource.data.status in ['rascunho', 'pronto'];
+      }
+
+      match /posts/{id} {
+        // Criados por marcarPostado e atualizados por salvarMetricas.
+        allow read: if podeAcessar(uid);
+        allow write: if false;
+      }
+
+      match /campanhas/{id} {
+        allow read: if podeAcessar(uid);
+        allow create: if false;
+        // Reorganizar datas no calendário.
+        allow update: if podeAcessar(uid) && naoMexeEm(['criadoEm']);
+        allow delete: if podeAcessar(uid);
+      }
+
+      match /notificacoes/{id} {
+        allow read: if podeAcessar(uid);
+        allow update: if podeAcessar(uid) && mudou().hasOnly(['lida']);
+        allow create, delete: if false;
+      }
+    }
+
+    // Todo o resto: fechado.
+    match /{documento=**} {
+      allow read, write: if false;
+    }
+  }
+}

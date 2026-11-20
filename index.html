@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#14121a" />
+  <title>Roteiros Visions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-functions-compat.js"></script>
+
+  <style>
+    :root {
+      --bg: #f6f5f8;
+      --card: #ffffff;
+      --text: #17151c;
+      --muted: #6b6775;
+      --line: #e6e3ec;
+      --accent: #5b3df5;
+      --accent-ink: #ffffff;
+      --accent-soft: #eeeaff;
+      --ok: #1f8a4c;
+      --ok-soft: #e4f5ea;
+      --danger: #c2372b;
+      --danger-soft: #fdeceb;
+      --warn: #a96500;
+      --warn-soft: #fff3df;
+      --radius: 14px;
+      --shadow: 0 1px 2px rgba(20, 18, 26, .06), 0 4px 16px rgba(20, 18, 26, .05);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #14121a;
+        --card: #1d1a25;
+        --text: #f1eff5;
+        --muted: #a29dad;
+        --line: #2e2a38;
+        --accent: #8b74ff;
+        --accent-ink: #0e0c13;
+        --accent-soft: #2a2442;
+        --ok: #4cc983;
+        --ok-soft: #173325;
+        --danger: #ff7a6e;
+        --danger-soft: #3a1c1a;
+        --warn: #f0b24f;
+        --warn-soft: #3a2b12;
+        --shadow: none;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.5 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 16px 16px calc(32px + env(safe-area-inset-bottom)); }
+    .center { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; }
+    .stack > * + * { margin-top: 14px; }
+    h1, h2, h3 { margin: 0; line-height: 1.25; }
+    h1 { font-size: 22px; font-weight: 700; }
+    h2 { font-size: 18px; font-weight: 600; }
+    .muted { color: var(--muted); }
+    .small { font-size: 14px; }
+    .marca { font-weight: 700; letter-spacing: -.01em; }
+    .marca span { color: var(--accent); }
+
+    label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+    .hint { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    input, select, textarea {
+      width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line);
+      background: var(--bg); outline: none; min-height: 46px;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 11px 16px; min-height: 44px; border-radius: 10px; border: 1px solid var(--line);
+      background: var(--card); cursor: pointer; font-weight: 600; font-size: 15px; white-space: nowrap;
+    }
+    .btn:disabled { opacity: .55; cursor: default; }
+    .btn.primario { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    .btn.perigo { color: var(--danger); border-color: var(--danger-soft); background: var(--danger-soft); }
+    .btn.ok { color: var(--ok); border-color: var(--ok-soft); background: var(--ok-soft); }
+    .btn.link { background: none; border: none; color: var(--accent); padding: 4px 0; min-height: 0; }
+    .btn.full { width: 100%; }
+    .btn.peq { padding: 7px 12px; min-height: 36px; font-size: 14px; }
+
+    .erro { background: var(--danger-soft); color: var(--danger); padding: 10px 12px; border-radius: 10px; font-size: 14px; }
+    .aviso { background: var(--warn-soft); color: var(--warn); padding: 12px 14px; border-radius: 10px; font-size: 14px; }
+
+    .topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0 16px; }
+    .linha { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .entre { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .grade { display: grid; gap: 12px; grid-template-columns: 1fr; }
+    @media (min-width: 720px) { .grade { grid-template-columns: 1fr 1fr; } }
+    .dupla { display: grid; gap: 14px; grid-template-columns: 1fr; }
+    @media (min-width: 520px) { .dupla { grid-template-columns: 1fr 1fr; } }
+
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    .badge.ativo { background: var(--ok-soft); color: var(--ok); }
+    .badge.bloqueado { background: var(--danger-soft); color: var(--danger); }
+    .badge.alerta { background: var(--warn-soft); color: var(--warn); }
+
+    .dados { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 14px; margin: 12px 0; }
+    .dados dt { color: var(--muted); }
+    .dados dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
+    .barra { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; margin-top: 6px; }
+    .barra > i { display: block; height: 100%; background: var(--accent); }
+    .acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .fundo-modal { position: fixed; inset: 0; background: rgba(10, 8, 14, .5); display: flex; align-items: flex-end; justify-content: center; z-index: 50; }
+    @media (min-width: 560px) { .fundo-modal { align-items: center; padding: 16px; } }
+    .modal { background: var(--card); width: 100%; max-width: 520px; max-height: 92vh; overflow: auto; border-radius: 18px 18px 0 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); }
+    @media (min-width: 560px) { .modal { border-radius: 18px; padding: 24px; } }
+
+    .senha { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 20px; letter-spacing: .04em; background: var(--accent-soft); padding: 12px; border-radius: 10px; text-align: center; overflow-wrap: anywhere; }
+    .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 12px 18px; border-radius: 12px; font-size: 14px; z-index: 60; max-width: calc(100% - 32px); }
+    .carregando { display: inline-block; width: 18px; height: 18px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: gira .7s linear infinite; }
+    @keyframes gira { to { transform: rotate(360deg); } }
+    .vazio { text-align: center; padding: 40px 16px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect, useMemo, useCallback } = React;
+
+    // ==========================================================
+    // Configuração do Firebase (preencher com o projeto real)
+    // ==========================================================
+    const FIREBASE_CONFIG = {
+      apiKey: 'PREENCHER',
+      authDomain: 'visions-roteiros.firebaseapp.com',
+      projectId: 'visions-roteiros',
+      storageBucket: 'visions-roteiros.appspot.com',
+      messagingSenderId: 'PREENCHER',
+      appId: 'PREENCHER',
+    };
+    const REGIAO_FUNCTIONS = 'southamerica-east1';
+    const FUSO = 'America/Sao_Paulo';
+    const MSG_SUSPENSO = 'Seu acesso está suspenso. Fale com a Visions.';
+
+    firebase.initializeApp(FIREBASE_CONFIG);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const fns = firebase.app().functions(REGIAO_FUNCTIONS);
+
+    // Rodando local (localhost/127.0.0.1): usa os emuladores do Firebase.
+    const EMULADOR = ['localhost', '127.0.0.1'].includes(location.hostname);
+    if (EMULADOR) {
+      auth.useEmulator('http://127.0.0.1:9099');
+      db.useEmulator('127.0.0.1', 8080);
+      fns.useEmulator('127.0.0.1', 5001);
+    }
+
+    // ==========================================================
+    // Utilitários
+    // ==========================================================
+    async function chamar(nome, dados = {}) {
+      const r = await fns.httpsCallable(nome)(dados);
+      return r.data;
+    }
+
+    function mensagemErro(e) {
+      const codigo = String(e?.code || '').replace(/^functions\//, '');
+      const porCodigo = {
+        'auth/invalid-credential': 'E-mail ou senha incorretos. Confira e tente de novo.',
+        'auth/wrong-password': 'E-mail ou senha incorretos. Confira e tente de novo.',
+        'auth/user-not-found': 'E-mail ou senha incorretos. Confira e tente de novo.',
+        'auth/invalid-email': 'Esse e-mail não parece válido.',
+        'auth/user-disabled': MSG_SUSPENSO,
+        'auth/too-many-requests': 'Muitas tentativas seguidas. Espere alguns minutos e tente de novo.',
+        'auth/network-request-failed': 'Sem conexão com a internet. Confira sua rede e tente de novo.',
+        'unavailable': 'Sem conexão com o servidor. Confira sua internet e tente de novo.',
+        'deadline-exceeded': 'O servidor demorou para responder. Tente de novo.',
+      };
+      if (porCodigo[codigo]) return porCodigo[codigo];
+      // Erros das functions já vêm em português; o SDK acrescenta " [403]" no fim.
+      if (e?.message && !/^Firebase:/.test(e.message)) return e.message.replace(/\s*\[\d{3}\]$/, '');
+      return 'Algo deu errado. Tente de novo em alguns minutos.';
+    }
+
+    const ehSuspensao = (e) =>
+      ['permission-denied', 'functions/permission-denied', 'auth/user-disabled'].includes(e?.code);
+
+    function mesReferencia(d = new Date()) {
+      return new Intl.DateTimeFormat('en-CA', { timeZone: FUSO, year: 'numeric', month: '2-digit' }).format(d);
+    }
+    // Timestamp -> "2026-12-31" no fuso de Brasília (para o input de data)
+    function paraISO(ts) {
+      if (!ts) return '';
+      return new Intl.DateTimeFormat('en-CA', { timeZone: FUSO, year: 'numeric', month: '2-digit', day: '2-digit' }).format(ts.toDate());
+    }
+    function paraBR(ts) {
+      if (!ts) return '';
+      return new Intl.DateTimeFormat('pt-BR', { timeZone: FUSO, day: '2-digit', month: '2-digit', year: 'numeric' }).format(ts.toDate());
+    }
+    function diasAte(ts) {
+      if (!ts) return null;
+      return Math.ceil((ts.toMillis() - Date.now()) / 86400000);
+    }
+    function geracoesDoMes(c) {
+      return c.mesReferencia === mesReferencia() ? (c.geracoesNoMes || 0) : 0;
+    }
+
+    async function copiar(texto) {
+      try {
+        await navigator.clipboard.writeText(texto);
+        return true;
+      } catch {
+        const t = document.createElement('textarea');
+        t.value = texto;
+        document.body.appendChild(t);
+        t.select();
+        const ok = document.execCommand('copy');
+        t.remove();
+        return ok;
+      }
+    }
+
+    // Toast simples
+    let mostrarToastGlobal = () => {};
+    const toast = (msg) => mostrarToastGlobal(msg);
+    function Toast() {
+      const [msg, setMsg] = useState('');
+      useEffect(() => {
+        let timer;
+        mostrarToastGlobal = (m) => {
+          setMsg(m);
+          clearTimeout(timer);
+          timer = setTimeout(() => setMsg(''), 3200);
+        };
+      }, []);
+      return msg ? <div className="toast" role="status">{msg}</div> : null;
+    }
+
+    function Marca() {
+      return <div className="marca">Roteiros <span>Visions</span></div>;
+    }
+
+    function Carregando({ texto = 'Carregando...' }) {
+      return (
+        <div className="center">
+          <div className="linha muted"><span className="carregando" /> {texto}</div>
+        </div>
+      );
+    }
+
+    // ==========================================================
+    // Login e acesso suspenso
+    // ==========================================================
+    function Login({ avisoInicial, onSuspenso }) {
+      const [email, setEmail] = useState('');
+      const [senha, setSenha] = useState('');
+      const [erro, setErro] = useState('');
+      const [enviando, setEnviando] = useState(false);
+
+      async function entrar(ev) {
+        ev.preventDefault();
+        setErro('');
+        if (!email.trim() || !senha) return setErro('Preencha e-mail e senha.');
+        setEnviando(true);
+        try {
+          await auth.signInWithEmailAndPassword(email.trim(), senha);
+        } catch (e) {
+          setEnviando(false);
+          if (e?.code === 'auth/user-disabled') return onSuspenso();
+          setErro(mensagemErro(e));
+        }
+      }
+
+      async function esqueci() {
+        setErro('');
+        if (!email.trim()) return setErro('Digite seu e-mail acima e toque de novo em "Esqueci minha senha".');
+        try {
+          await auth.sendPasswordResetEmail(email.trim());
+        } catch {
+          // Não revela se o e-mail existe.
+        }
+        toast('Se esse e-mail tiver acesso, você vai receber um link para criar uma nova senha.');
+      }
+
+      return (
+        <div className="center">
+          <form className="card stack" style={{ width: '100%', maxWidth: 400 }} onSubmit={entrar} noValidate>
+            <Marca />
+            <div>
+              <h1>Entrar</h1>
+              <p className="muted small" style={{ margin: '4px 0 0' }}>Use o e-mail e a senha que a Visions te enviou.</p>
+            </div>
+            {avisoInicial && <div className="aviso">{avisoInicial}</div>}
+            <div>
+              <label htmlFor="email">E-mail</label>
+              <input id="email" type="email" autoComplete="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+            <div>
+              <label htmlFor="senha">Senha</label>
+              <input id="senha" type="password" autoComplete="current-password" value={senha} onChange={(e) => setSenha(e.target.value)} />
+            </div>
+            {erro && <div className="erro" role="alert">{erro}</div>}
+            <button className="btn primario full" disabled={enviando}>
+              {enviando ? <><span className="carregando" /> Entrando...</> : 'Entrar'}
+            </button>
+            <button type="button" className="btn link" onClick={esqueci}>Esqueci minha senha</button>
+            {EMULADOR && <p className="hint">Modo local: conectado aos emuladores do Firebase.</p>}
+          </form>
+        </div>
+      );
+    }
+
+    function AcessoSuspenso({ onVoltar }) {
+      return (
+        <div className="center">
+          <div className="card stack" style={{ width: '100%', maxWidth: 420, textAlign: 'center' }}>
+            <Marca />
+            <h1>Acesso suspenso</h1>
+            <p className="muted" style={{ margin: 0 }}>
+              Seu acesso à plataforma está suspenso no momento. Seus roteiros e dados continuam guardados.
+              Fale com a Visions para reativar.
+            </p>
+            <button className="btn full" onClick={onVoltar}>Voltar para o login</button>
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================================
+    // Painel do admin
+    // ==========================================================
+    function Modal({ titulo, onFechar, children }) {
+      useEffect(() => {
+        const esc = (e) => e.key === 'Escape' && onFechar();
+        window.addEventListener('keydown', esc);
+        return () => window.removeEventListener('keydown', esc);
+      }, [onFechar]);
+      return (
+        <div className="fundo-modal" onClick={(e) => e.target === e.currentTarget && onFechar()}>
+          <div className="modal stack" role="dialog" aria-modal="true" aria-label={titulo}>
+            <div className="entre">
+              <h2>{titulo}</h2>
+              <button className="btn link" onClick={onFechar} aria-label="Fechar">Fechar</button>
+            </div>
+            {children}
+          </div>
+        </div>
+      );
+    }
+
+    function FormCliente({ cliente, onFechar, onCriado }) {
+      const editando = !!cliente;
+      const [f, setF] = useState({
+        nome: cliente?.nome || '',
+        email: cliente?.email || '',
+        perfilInstagram: cliente?.perfilInstagram || '',
+        venceEm: paraISO(cliente?.venceEm),
+        limiteGeracoesMes: cliente?.limiteGeracoesMes ?? '',
+      });
+      const [erro, setErro] = useState('');
+      const [salvando, setSalvando] = useState(false);
+      const mudar = (campo) => (e) => setF({ ...f, [campo]: e.target.value });
+
+      async function salvar(ev) {
+        ev.preventDefault();
+        setErro('');
+        if (!f.nome.trim()) return setErro('Preencha o nome.');
+        if (!editando && !f.email.trim()) return setErro('Preencha o e-mail.');
+        setSalvando(true);
+        const base = {
+          nome: f.nome,
+          perfilInstagram: f.perfilInstagram,
+          venceEm: f.venceEm || null,
+          limiteGeracoesMes: f.limiteGeracoesMes === '' ? null : Number(f.limiteGeracoesMes),
+        };
+        try {
+          if (editando) {
+            await chamar('adminAtualizarCliente', { uid: cliente.id, ...base });
+            toast('Cliente atualizado.');
+            onFechar();
+          } else {
+            const r = await chamar('adminCriarCliente', { ...base, email: f.email });
+            onCriado({ nome: f.nome, email: r.email, senha: r.senhaProvisoria });
+          }
+        } catch (e) {
+          setErro(mensagemErro(e));
+          setSalvando(false);
+        }
+      }
+
+      return (
+        <Modal titulo={editando ? 'Editar cliente' : 'Novo cliente'} onFechar={onFechar}>
+          <form className="stack" onSubmit={salvar} noValidate>
+            <div>
+              <label htmlFor="f-nome">Nome</label>
+              <input id="f-nome" value={f.nome} onChange={mudar('nome')} autoFocus />
+            </div>
+            <div>
+              <label htmlFor="f-email">E-mail de login</label>
+              <input id="f-email" type="email" value={f.email} onChange={mudar('email')} disabled={editando} />
+              {editando && <p className="hint">O e-mail de login não muda por aqui.</p>}
+            </div>
+            <div>
+              <label htmlFor="f-ig">Perfil do Instagram</label>
+              <input id="f-ig" placeholder="@perfil" value={f.perfilInstagram} onChange={mudar('perfilInstagram')} />
+            </div>
+            <div className="dupla">
+              <div>
+                <label htmlFor="f-vence">Vencimento</label>
+                <input id="f-vence" type="date" value={f.venceEm} onChange={mudar('venceEm')} />
+                <p className="hint">Em branco: sem vencimento. Bloqueia sozinho no dia seguinte.</p>
+              </div>
+              <div>
+                <label htmlFor="f-limite">Limite de gerações por mês</label>
+                <input id="f-limite" type="number" min="0" inputMode="numeric" placeholder="Sem limite" value={f.limiteGeracoesMes} onChange={mudar('limiteGeracoesMes')} />
+                <p className="hint">Em branco: sem limite.</p>
+              </div>
+            </div>
+            {erro && <div className="erro" role="alert">{erro}</div>}
+            <button className="btn primario full" disabled={salvando}>
+              {salvando ? <><span className="carregando" /> Salvando...</> : editando ? 'Salvar alterações' : 'Criar cliente'}
+            </button>
+          </form>
+        </Modal>
+      );
+    }
+
+    function SenhaGerada({ dados, onFechar }) {
+      const mensagem =
+        `Oi, ${dados.nome.split(' ')[0]}! Seu acesso à plataforma de roteiros da Visions está pronto.\n\n` +
+        `Link: ${location.origin}\nE-mail: ${dados.email}\nSenha provisória: ${dados.senha}`;
+      return (
+        <Modal titulo={dados.titulo || 'Cliente criado'} onFechar={onFechar}>
+          <p className="muted" style={{ margin: 0 }}>
+            Repasse a senha para <strong>{dados.nome}</strong>. Ela só aparece agora: se perder, gere uma nova.
+          </p>
+          <div>
+            <label>E-mail</label>
+            <div className="senha" style={{ fontSize: 16 }}>{dados.email}</div>
+          </div>
+          <div>
+            <label>Senha provisória</label>
+            <div className="senha">{dados.senha}</div>
+          </div>
+          <button className="btn primario full" onClick={async () => toast((await copiar(mensagem)) ? 'Mensagem copiada. Cole no WhatsApp do cliente.' : 'Não consegui copiar. Selecione e copie à mão.')}>
+            Copiar mensagem com o acesso
+          </button>
+          <button className="btn full" onClick={onFechar}>Pronto</button>
+        </Modal>
+      );
+    }
+
+    function CartaoCliente({ c, onEditar, onSenha }) {
+      const [ocupado, setOcupado] = useState(false);
+      const ativo = c.status === 'ativo';
+      const usadas = geracoesDoMes(c);
+      const dias = diasAte(c.venceEm);
+      const pct = c.limiteGeracoesMes ? Math.min(100, Math.round((usadas / c.limiteGeracoesMes) * 100)) : 0;
+
+      async function alternarBloqueio() {
+        const pergunta = ativo
+          ? `Bloquear ${c.nome}? O acesso cai na hora, mesmo com o app aberto. Nada é apagado.`
+          : `Desbloquear ${c.nome}? Ela volta a acessar tudo como deixou.`;
+        if (!confirm(pergunta)) return;
+        setOcupado(true);
+        try {
+          await chamar(ativo ? 'adminBloquearCliente' : 'adminDesbloquearCliente', { uid: c.id });
+          toast(ativo ? `${c.nome} foi bloqueado(a).` : `${c.nome} foi desbloqueado(a).`);
+        } catch (e) {
+          toast(mensagemErro(e));
+        }
+        setOcupado(false);
+      }
+
+      async function novaSenha() {
+        if (!confirm(`Gerar uma nova senha para ${c.nome}? A senha atual deixa de funcionar e as sessões abertas são encerradas.`)) return;
+        setOcupado(true);
+        try {
+          const r = await chamar('adminRedefinirSenha', { uid: c.id });
+          onSenha({ nome: c.nome, email: c.email, senha: r.senhaProvisoria, titulo: 'Nova senha gerada' });
+        } catch (e) {
+          toast(mensagemErro(e));
+        }
+        setOcupado(false);
+      }
+
+      return (
+        <div className="card">
+          <div className="entre">
+            <div style={{ minWidth: 0 }}>
+              <h3 style={{ fontSize: 17 }}>{c.nome}</h3>
+              <div className="muted small">{c.perfilInstagram ? '@' + c.perfilInstagram : 'sem perfil informado'}</div>
+            </div>
+            <span className={'badge ' + (ativo ? 'ativo' : 'bloqueado')}>{ativo ? 'Ativo' : 'Bloqueado'}</span>
+          </div>
+          <dl className="dados">
+            <dt>E-mail</dt><dd>{c.email}</dd>
+            <dt>Vencimento</dt>
+            <dd>
+              {c.venceEm ? paraBR(c.venceEm) : 'sem vencimento'}
+              {ativo && dias !== null && dias <= 7 && dias >= 0 && <> <span className="badge alerta">{dias === 0 ? 'vence hoje' : `${dias} dia(s)`}</span></>}
+            </dd>
+            <dt>Gerações no mês</dt>
+            <dd>{usadas}{c.limiteGeracoesMes != null ? ` de ${c.limiteGeracoesMes}` : ' (sem limite)'}</dd>
+            {!ativo && c.bloqueadoEm && <><dt>Bloqueado em</dt><dd>{paraBR(c.bloqueadoEm)}{c.origemBloqueio === 'vencimento' ? ' (vencimento)' : ''}</dd></>}
+          </dl>
+          {c.limiteGeracoesMes ? <div className="barra" aria-hidden="true"><i style={{ width: pct + '%' }} /></div> : null}
+          <div className="acoes" style={{ marginTop: 14 }}>
+            <button className="btn peq" onClick={() => onEditar(c)} disabled={ocupado}>Editar</button>
+            <button className={'btn peq ' + (ativo ? 'perigo' : 'ok')} onClick={alternarBloqueio} disabled={ocupado}>
+              {ativo ? 'Bloquear' : 'Desbloquear'}
+            </button>
+            <button className="btn peq" onClick={novaSenha} disabled={ocupado}>Nova senha</button>
+          </div>
+        </div>
+      );
+    }
+
+    function PainelAdmin({ usuario }) {
+      const [clientes, setClientes] = useState(null);
+      const [erro, setErro] = useState('');
+      const [busca, setBusca] = useState('');
+      const [filtro, setFiltro] = useState('todos');
+      const [modal, setModal] = useState(null); // {tipo: 'novo'|'editar'|'senha', dados}
+      const [configFalta, setConfigFalta] = useState(false);
+
+      useEffect(() => {
+        const parar = db.collection('clientes').onSnapshot(
+          (s) => setClientes(s.docs.map((d) => ({ id: d.id, ...d.data() }))),
+          (e) => setErro(mensagemErro(e))
+        );
+        db.doc('config/travaAntiIA').get().then((d) => setConfigFalta(!d.exists)).catch(() => {});
+        return parar;
+      }, []);
+
+      const lista = useMemo(() => {
+        if (!clientes) return [];
+        const q = busca.trim().toLowerCase();
+        return clientes
+          .filter((c) => filtro === 'todos' || c.status === filtro)
+          .filter((c) => !q || [c.nome, c.email, c.perfilInstagram].some((v) => (v || '').toLowerCase().includes(q)))
+          .sort((a, b) => (a.status === b.status ? a.nome.localeCompare(b.nome, 'pt-BR') : a.status === 'ativo' ? -1 : 1));
+      }, [clientes, busca, filtro]);
+
+      const totais = useMemo(() => {
+        const t = { ativo: 0, bloqueado: 0 };
+        (clientes || []).forEach((c) => t[c.status] = (t[c.status] || 0) + 1);
+        return t;
+      }, [clientes]);
+
+      async function criarConfig() {
+        try {
+          const r = await chamar('adminInicializarConfig');
+          setConfigFalta(false);
+          toast(r.criados.length ? 'Configurações iniciais criadas.' : 'As configurações já existiam.');
+        } catch (e) {
+          toast(mensagemErro(e));
+        }
+      }
+
+      const fechar = useCallback(() => setModal(null), []);
+
+      return (
+        <div className="wrap">
+          <div className="topo">
+            <Marca />
+            <button className="btn peq" onClick={() => auth.signOut()}>Sair</button>
+          </div>
+
+          <div className="stack">
+            <div className="entre">
+              <div>
+                <h1>Clientes</h1>
+                <div className="muted small">{totais.ativo} ativo(s) · {totais.bloqueado} bloqueado(s)</div>
+              </div>
+              <button className="btn primario" onClick={() => setModal({ tipo: 'novo' })}>+ Novo cliente</button>
+            </div>
+
+            {configFalta && (
+              <div className="aviso entre">
+                <span>As configurações iniciais (lista da trava e referências de métricas) ainda não foram criadas.</span>
+                <button className="btn peq" onClick={criarConfig}>Criar agora</button>
+              </div>
+            )}
+
+            <div className="dupla">
+              <input placeholder="Buscar por nome, e-mail ou @" value={busca} onChange={(e) => setBusca(e.target.value)} aria-label="Buscar cliente" />
+              <select value={filtro} onChange={(e) => setFiltro(e.target.value)} aria-label="Filtrar por status">
+                <option value="todos">Todos os status</option>
+                <option value="ativo">Só ativos</option>
+                <option value="bloqueado">Só bloqueados</option>
+              </select>
+            </div>
+
+            {erro && <div className="erro">{erro}</div>}
+            {!clientes && !erro && <div className="linha muted"><span className="carregando" /> Carregando clientes...</div>}
+            {clientes && !lista.length && (
+              <div className="card vazio muted">
+                {clientes.length ? 'Nenhum cliente encontrado com esse filtro.' : 'Nenhum cliente ainda. Toque em "Novo cliente" para criar o primeiro login.'}
+              </div>
+            )}
+            <div className="grade">
+              {lista.map((c) => (
+                <CartaoCliente key={c.id} c={c}
+                  onEditar={(c) => setModal({ tipo: 'editar', dados: c })}
+                  onSenha={(d) => setModal({ tipo: 'senha', dados: d })} />
+              ))}
+            </div>
+          </div>
+
+          {modal?.tipo === 'novo' && <FormCliente onFechar={fechar} onCriado={(d) => setModal({ tipo: 'senha', dados: d })} />}
+          {modal?.tipo === 'editar' && <FormCliente cliente={modal.dados} onFechar={fechar} />}
+          {modal?.tipo === 'senha' && <SenhaGerada dados={modal.dados} onFechar={fechar} />}
+        </div>
+      );
+    }
+
+    // ==========================================================
+    // Área do cliente (Fase 1: só a entrada; DNA e geração vêm nas próximas fases)
+    // ==========================================================
+    function InicioCliente({ cliente }) {
+      return (
+        <div className="wrap">
+          <div className="topo">
+            <Marca />
+            <button className="btn peq" onClick={() => auth.signOut()}>Sair</button>
+          </div>
+          <div className="card stack">
+            <h1>Olá, {cliente.nome.split(' ')[0]}!</h1>
+            <p className="muted" style={{ margin: 0 }}>
+              Seu acesso está ativo. Em breve você vai montar aqui o DNA do seu perfil e gerar seus roteiros.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================================
+    // App: decide a tela e vigia o status do cliente em tempo real
+    // ==========================================================
+    function App() {
+      const [estado, setEstado] = useState({ fase: 'carregando' });
+      const [suspenso, setSuspenso] = useState(false);
+
+      useEffect(() => {
+        let pararCliente = null;
+        const pararAuth = auth.onAuthStateChanged(async (u) => {
+          if (pararCliente) { pararCliente(); pararCliente = null; }
+          if (!u) return setEstado({ fase: 'login' });
+
+          setEstado({ fase: 'carregando' });
+          let token;
+          try {
+            token = await u.getIdTokenResult();
+          } catch (e) {
+            // Token revogado ou usuário desativado.
+            if (ehSuspensao(e) || e?.code === 'auth/user-token-expired') setSuspenso(true);
+            await auth.signOut();
+            return;
+          }
+          if (token.claims.admin === true) return setEstado({ fase: 'admin', usuario: u });
+
+          // Cliente: escuta o próprio documento. Se o status mudar ou a leitura for negada, sai.
+          pararCliente = db.doc(`clientes/${u.uid}`).onSnapshot(
+            (snap) => {
+              const c = snap.data();
+              if (!snap.exists || c.status !== 'ativo') {
+                setSuspenso(true);
+                auth.signOut();
+                return;
+              }
+              setEstado({ fase: 'cliente', usuario: u, cliente: { id: snap.id, ...c } });
+            },
+            (e) => {
+              if (ehSuspensao(e)) setSuspenso(true);
+              else toast(mensagemErro(e));
+              auth.signOut();
+            }
+          );
+        });
+        return () => { pararAuth(); if (pararCliente) pararCliente(); };
+      }, []);
+
+      let tela;
+      if (suspenso && estado.fase !== 'admin' && estado.fase !== 'cliente') {
+        tela = <AcessoSuspenso onVoltar={() => setSuspenso(false)} />;
+      } else if (estado.fase === 'carregando') {
+        tela = <Carregando />;
+      } else if (estado.fase === 'login') {
+        tela = <Login onSuspenso={() => setSuspenso(true)} />;
+      } else if (estado.fase === 'admin') {
+        tela = <PainelAdmin usuario={estado.usuario} />;
+      } else {
+        tela = <InicioCliente cliente={estado.cliente} />;
+      }
+      return <>{tela}<Toast /></>;
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
