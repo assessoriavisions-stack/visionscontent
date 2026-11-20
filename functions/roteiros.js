@@ -94,20 +94,20 @@ async function carregarRecentes(uid) {
 
 // ---------- geração com trava ----------
 
-async function gerarComTrava({ uid, formato, prompt, padroes, extraUsuario = null, conteudoBase = null }) {
+// Gera o conteúdo e passa pela trava. Não grava nada (usado também pelo teste com a API real).
+async function gerarConteudo({ formato, prompt, padroes, extraUsuario = null, conteudoBase = null }) {
   const esquema = ESQUEMAS[formato];
   const validar = (c) => validarConteudo(formato, c);
   const primeiraMensagem = [{ role: 'user', content: prompt.user }];
 
-  let conteudo;
   let conversaBase = primeiraMensagem;
   if (conteudoBase && extraUsuario) {
     // Refação (ex.: cortar duração) a partir de um conteúdo já gerado.
     conversaBase = [...primeiraMensagem, { role: 'assistant', content: JSON.stringify(conteudoBase) }, { role: 'user', content: extraUsuario }];
   }
-  conteudo = await gerarJSON({ chave: `roteiro:${formato}`, system: prompt.system, mensagens: conversaBase, esquema, validar });
+  const conteudo = await gerarJSON({ chave: `roteiro:${formato}`, system: prompt.system, mensagens: conversaBase, esquema, validar });
 
-  const resultado = await trava.aplicarTrava(conteudo, padroes, (atual, violacoes) =>
+  return trava.aplicarTrava(conteudo, padroes, (atual, violacoes) =>
     gerarJSON({
       chave: `roteiroReescrita:${formato}`,
       system: prompt.system,
@@ -120,8 +120,30 @@ async function gerarComTrava({ uid, formato, prompt, padroes, extraUsuario = nul
       validar,
     })
   );
-  await trava.registrarLogs(db, { uid, refId: null, origem: 'roteiro', historico: resultado.historico });
-  return resultado;
+}
+
+// Regra de duração: reels/série de P1 ou P2 acima de 90s refaz pedindo corte; se continuar longo, aviso.
+async function gerarComDuracao({ escolhas, prompt, padroes, aoGerar = async () => {} }) {
+  let r = await gerarConteudo({ formato: escolhas.formato, prompt, padroes });
+  await aoGerar(r);
+  const avisos = [];
+  const controlaDuracao = ['reels', 'serie'].includes(escolhas.formato) && ['P1', 'P2'].includes(escolhas.pilar);
+  let duracao = duracaoEstimadaSeg(r.conteudo);
+  if (controlaDuracao && duracao > cat.DURACAO_MAX_CRESCER_SEG) {
+    const r2 = await gerarConteudo({
+      formato: escolhas.formato, prompt, padroes, conteudoBase: r.conteudo,
+      extraUsuario: `O vídeo ficou com cerca de ${duracao}s faladas. Corte para no máximo ${cat.DURACAO_ALVO_CORTE_SEG}s (cerca de ${cat.DURACAO_ALVO_CORTE_SEG * cat.PALAVRAS_POR_SEGUNDO} palavras faladas no total), mantendo o gancho, a big idea e o CTA. Devolva o JSON completo.`,
+    });
+    await aoGerar(r2);
+    r = { ...r2, trava: { ...r2.trava, tentativas: r.trava.tentativas + r2.trava.tentativas, violacoesEncontradas: [...r.trava.violacoesEncontradas, ...r2.trava.violacoesEncontradas] } };
+    duracao = duracaoEstimadaSeg(r.conteudo);
+    if (duracao > cat.DURACAO_MAX_CRESCER_SEG) {
+      avisos.push(escolhas.pilar === 'P2'
+        ? 'Acima de 1min30 esse vídeo não roda bem como anúncio.'
+        : 'Acima de 1min30 esse vídeo tende a alcançar menos gente nova. Para crescer a base, corte antes de gravar.');
+    }
+  }
+  return { ...r, avisos };
 }
 
 // ---------- callables ----------
@@ -201,25 +223,11 @@ exports.gerarRoteiro = callableCliente(async ({ data }, { uid, cliente }) => {
   ]);
   const prompt = montarPromptRoteiro({ dna, escolhas, padroes, aprendizados, ganchosRecentes: recentes.ganchos, campanha: null, serie: contextoSerie });
 
-  let r = await gerarComTrava({ uid, formato: escolhas.formato, prompt, padroes });
-
-  // Regra de duração: reels/série de P1 ou P2 acima de 90s refaz pedindo corte.
-  const avisos = [];
-  const controlaDuracao = ['reels', 'serie'].includes(escolhas.formato) && ['P1', 'P2'].includes(escolhas.pilar);
-  let duracao = duracaoEstimadaSeg(r.conteudo);
-  if (controlaDuracao && duracao > cat.DURACAO_MAX_CRESCER_SEG) {
-    const r2 = await gerarComTrava({
-      uid, formato: escolhas.formato, prompt, padroes, conteudoBase: r.conteudo,
-      extraUsuario: `O vídeo ficou com cerca de ${duracao}s faladas. Corte para no máximo ${cat.DURACAO_ALVO_CORTE_SEG}s (cerca de ${cat.DURACAO_ALVO_CORTE_SEG * cat.PALAVRAS_POR_SEGUNDO} palavras faladas no total), mantendo o gancho, a big idea e o CTA. Devolva o JSON completo.`,
-    });
-    r = { ...r2, trava: { ...r2.trava, tentativas: r.trava.tentativas + r2.trava.tentativas, violacoesEncontradas: [...r.trava.violacoesEncontradas, ...r2.trava.violacoesEncontradas] } };
-    duracao = duracaoEstimadaSeg(r.conteudo);
-    if (duracao > cat.DURACAO_MAX_CRESCER_SEG) {
-      avisos.push(escolhas.pilar === 'P2'
-        ? 'Acima de 1min30 esse vídeo não roda bem como anúncio.'
-        : 'Acima de 1min30 esse vídeo tende a alcançar menos gente nova. Para crescer a base, corte antes de gravar.');
-    }
-  }
+  const r = await gerarComDuracao({
+    escolhas, prompt, padroes,
+    aoGerar: (x) => trava.registrarLogs(db, { uid, refId: null, origem: 'roteiro', historico: x.historico }),
+  });
+  const avisos = r.avisos;
 
   const conteudo = r.conteudo;
   const legenda = conteudo.legenda || '';
@@ -249,4 +257,5 @@ exports.gerarRoteiro = callableCliente(async ({ data }, { uid, cliente }) => {
 }, { ...OPCOES_IA, consomeGeracao: true });
 
 exports.validarEscolhas = validarEscolhas;
+exports.gerarComDuracao = gerarComDuracao;
 exports.ganchoDe = ganchoDe;

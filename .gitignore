@@ -8,3 +8,4 @@ ui-debug.log*
 .runtimeconfig.json
 functions/.secret.local
 service-account*.json
+functions/teste-real-resultado.json

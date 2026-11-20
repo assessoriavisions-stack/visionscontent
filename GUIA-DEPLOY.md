@@ -79,3 +79,17 @@ Assim só o admin cria logins (pelo painel da plataforma).
 2. Publique a pasta no Netlify.
 3. **Authentication > Configurações > Domínios autorizados**: adicione o domínio do Netlify.
 4. Entre no site com o seu login de admin e toque em **Criar agora** no aviso de configurações iniciais.
+
+## 9. Teste da geração com a IA de verdade (opcional, recomendado)
+
+Gera 20 roteiros variados com um perfil de demonstração e confere que nenhum trecho com cara de IA
+chega sem marcação. Custa alguns dólares na conta da Anthropic e leva uns 10 minutos.
+Dentro da pasta do projeto:
+```bash
+cd functions && npm install
+```
+```bash
+read -s ANTHROPIC_API_KEY && export ANTHROPIC_API_KEY && node scripts/testeRealGeracao.js
+```
+O `read -s` espera você colar a chave (não aparece na tela) e apertar Enter. No fim aparece
+"ACEITE OK" ou "ACEITE FALHOU", e o arquivo `teste-real-resultado.json` com os roteiros completos.
