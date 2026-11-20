@@ -20,6 +20,21 @@ service cloud.firestore {
     // O cliente só acessa os próprios dados enquanto estiver ativo.
     function podeAcessar(uid) { return isDono(uid) && clienteAtivo(uid); }
 
+    // Limites do DNA: só campos conhecidos e listas de tamanho razoável.
+    function dnaValido(d) {
+      let tom = d.get('tom', {});
+      return d.keys().hasOnly(['negocio', 'tom', 'expressoesQueUsa', 'palavrasProibidas', 'temaPrincipal',
+                               'subtemas', 'atualizadoEm', 'etapaOnboarding', 'onboardingConcluido'])
+        && d.get('negocio', {}) is map
+        && tom is map
+        && tom.get('exemplosReais', []).size() <= 5
+        && tom.get('perfilDeVozExtraido', '').size() <= 4000
+        && d.get('expressoesQueUsa', []).size() <= 30
+        && d.get('palavrasProibidas', []).size() <= 60
+        && d.get('subtemas', []).size() <= 20
+        && d.get('temaPrincipal', '').size() <= 200;
+    }
+
     function mudou() { return request.resource.data.diff(resource.data).affectedKeys(); }
     function naoMexeEm(campos) { return !mudou().hasAny(campos); }
 
@@ -51,7 +66,8 @@ service cloud.firestore {
       }
 
       match /dna/{docId} {
-        allow read, write: if podeAcessar(uid);
+        allow read: if podeAcessar(uid);
+        allow write: if podeAcessar(uid) && docId == 'atual' && dnaValido(request.resource.data);
       }
 
       match /roteiros/{id} {

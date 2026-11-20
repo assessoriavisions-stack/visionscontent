@@ -7,8 +7,8 @@ Frontend em um único `index.html` (React + Babel via CDN, no Netlify) e backend
 ## Status
 
 - [x] **Fase 1: base, acesso e admin**
-- [ ] Fase 2: DNA do perfil
-- [ ] Fase 3: geração + trava anti-linguagem de IA
+- [x] Fase 2: DNA do perfil
+- [ ] Fase 3: geração + trava anti-linguagem de IA (trava já pronta e testada)
 - [ ] Fase 4: editor
 - [ ] Fase 5: postado, métricas e diagnóstico
 - [ ] Fase 6: lembretes (PWA + push)
@@ -75,11 +75,29 @@ Identidade da Visions: vermelho `#DD2A2A`, amarelo `#FFCF51` e azul `#2657A5` do
 títulos em Fraunces (serifada) e texto em Inter. A faixa tricolor do logo aparece no topo dos cartões
 e do cabeçalho. Logo em `assets/logo-visions.png`.
 
+## Fase 2: DNA do perfil
+
+- Onboarding em 6 passos na primeira entrada (negócio, tom, exemplos reais, palavras, tema, perfil de voz).
+  O progresso fica salvo a cada passo.
+- `extrairPerfilDeVoz` (callable): lê os exemplos e eixos do Firestore, gera o perfil com a IA,
+  passa pela trava e salva em `dna/atual.tom.perfilDeVozExtraido`. O cliente edita depois.
+- Tela "Meu perfil" para editar tudo depois.
+- Sem DNA completo o botão de criar roteiro fica bloqueado; no servidor, `exigirDnaCompleto()`
+  (em `functions/dna.js`) barra a geração da Fase 3.
+- Trava anti-IA (`functions/ia/travaAntiIA.js`): validação com acentos/maiúsculas normalizados,
+  heurísticas, palavras proibidas do cliente, loop de até 2 reescritas, correção automática do
+  travessão e registro em `logs/trava/registros`.
+
 ## Rodar local e testar
 
 ```bash
+cd functions && npm test
+```
+```bash
 cd testes && npm install && npm test
 ```
+
+`functions/.env.local` liga a IA simulada (`IA_FAKE=1`) só nos emuladores.
 
 O teste sobe os emuladores (Auth, Firestore, Functions) e verifica o aceite da Fase 1: cliente bloqueado
 não loga, não lê nem escreve nada e não chama functions, mesmo com a sessão aberta antes do bloqueio;

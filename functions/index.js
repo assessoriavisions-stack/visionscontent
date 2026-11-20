@@ -11,6 +11,10 @@ exports.adminInicializarConfig = admin.adminInicializarConfig;
 exports.verificarVencimentos = admin.verificarVencimentos;
 exports.resetarContadorMensal = admin.resetarContadorMensal;
 
+// Fase 2: DNA do perfil
+const dna = require('./dna');
+exports.extrairPerfilDeVoz = dna.extrairPerfilDeVoz;
+
 // Callable mínima usada para verificar o middleware do cliente (status ativo).
 // As próximas fases trocam isto pelas functions reais (gerarRoteiro etc.).
 const { callableCliente } = require('./lib/middleware');

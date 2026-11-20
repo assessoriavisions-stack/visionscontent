@@ -223,6 +223,29 @@
     @media (min-width: 560px) { .boas-vindas { padding: 40px; } }
     .boas-vindas h1 em { font-style: italic; color: var(--azul); }
 
+    /* DNA do perfil */
+    .estreito { max-width: 720px; }
+    textarea { min-height: 0; resize: vertical; line-height: 1.5; }
+    .progresso { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+    .progresso button { height: 5px; border: 0; padding: 0; border-radius: 99px; background: var(--linha); cursor: pointer; }
+    .progresso button:disabled { cursor: default; }
+    .progresso button.feito { background: var(--tinta); }
+    .progresso button.atual { background: var(--azul); }
+    .eixo strong { font-weight: 500; font-size: 14px; color: var(--tinta-2); }
+    .escala { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px; }
+    .escala button { min-height: 46px; border-radius: var(--raio-sm); border: 1px solid var(--linha); background: var(--superficie); cursor: pointer; font-family: var(--serifa); font-size: 17px; color: var(--tinta-2); transition: all .15s; }
+    .escala button:hover { border-color: #D3CCBC; }
+    .escala button.ativo { background: var(--tinta); border-color: var(--tinta); color: var(--marfim); }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .chip { display: inline-flex; align-items: center; gap: 4px; background: var(--azul-claro); color: var(--azul); border-radius: 999px; padding: 5px 6px 5px 12px; font-size: 13.5px; }
+    .chip button { border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 16px; line-height: 1; width: 22px; height: 22px; border-radius: 50%; }
+    .chip button:hover { background: rgba(38, 87, 165, .12); }
+    .linha-input { display: flex; gap: 8px; }
+    .linha-input input { flex: 1; min-width: 0; }
+    .linha-input .btn { min-height: 48px; }
+    .carregando-ia { display: flex; align-items: center; gap: 10px; padding: 18px; border-radius: var(--raio-sm); background: var(--azul-claro); color: var(--azul); font-weight: 500; }
+    .barra-acoes { display: flex; justify-content: flex-end; gap: 10px; position: sticky; bottom: 0; padding: 14px 0 calc(14px + env(safe-area-inset-bottom)); background: linear-gradient(to top, var(--marfim) 70%, transparent); }
+
     /* Fase de crescimento */
     .selo.testes { background: var(--azul-claro); color: var(--azul); }
     .selo.vencedor { background: var(--amarelo-claro); color: #8A6400; }
@@ -963,10 +986,425 @@
       );
     }
 
-    function InicioCliente({ cliente }) {
+    // ==========================================================
+    // Fase 2: DNA do perfil
+    // ==========================================================
+    const DESTINOS_VENDA = { direct: 'Direct do Instagram', whatsapp: 'WhatsApp', link_bio: 'Link na bio', formulario: 'Formulário', loja: 'Loja (física ou online)' };
+    const EIXOS = [
+      { id: 'tecnicoProximo', a: 'Técnico', b: 'Próximo', dica: 'Fala como especialista ou como amiga?' },
+      { id: 'serioIrreverente', a: 'Sério', b: 'Irreverente', dica: 'Tem espaço para piada e ironia?' },
+      { id: 'formalInformal', a: 'Formal', b: 'Informal', dica: 'Escreve "você" e "a gente", ou mais certinho?' },
+      { id: 'calmoIntenso', a: 'Calmo', b: 'Intenso', dica: 'Tom de conversa tranquila ou de energia lá em cima?' },
+    ];
+    const MIN_EXEMPLOS = 3;
+    const MAX_EXEMPLOS = 5;
+    const MIN_CARACTERES_EXEMPLO = 40;
+    const exemplosValidos = (dna) => (dna?.tom?.exemplosReais || []).filter((e) => (e || '').trim().length >= MIN_CARACTERES_EXEMPLO);
+
+    // Mesma regra de functions/dna.js (faltandoNoDna).
+    function faltandoNoDna(dna) {
+      const f = [];
+      const n = dna?.negocio || {};
+      if (!n.oQueFaz?.trim()) f.push('o que você faz');
+      if (!n.paraQuem?.trim()) f.push('para quem');
+      if (!DESTINOS_VENDA[n.destinoVenda]) f.push('onde a venda acontece');
+      const eixos = dna?.tom?.eixos || {};
+      if (EIXOS.some((e) => !(eixos[e.id] >= 1 && eixos[e.id] <= 5))) f.push('os eixos do tom');
+      if (exemplosValidos(dna).length < MIN_EXEMPLOS) f.push(`${MIN_EXEMPLOS} exemplos reais`);
+      if (!dna?.tom?.perfilDeVozExtraido?.trim()) f.push('o perfil de voz');
+      if (!dna?.temaPrincipal?.trim()) f.push('o tema principal');
+      if (!(dna?.subtemas || []).some((s) => s?.trim())) f.push('pelo menos 1 subtema');
+      return f;
+    }
+
+    function useDna(uid) {
+      const [dna, setDna] = useState(undefined);
+      useEffect(() => db.doc(`clientes/${uid}/dna/atual`).onSnapshot(
+        (s) => setDna(s.exists ? s.data() : null),
+        () => setDna(null)
+      ), [uid]);
+      return dna;
+    }
+
+    async function salvarDna(uid, parcial) {
+      await db.doc(`clientes/${uid}/dna/atual`).set({ ...parcial, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    }
+
+    function Etiquetas({ id, valor = [], onChange, placeholder, max = 30 }) {
+      const [texto, setTexto] = useState('');
+      function adicionar() {
+        const novos = texto.split(/[,;\n]/).map((t) => t.trim()).filter(Boolean)
+          .filter((t) => !valor.some((v) => v.toLowerCase() === t.toLowerCase()));
+        if (novos.length) onChange([...valor, ...novos].slice(0, max));
+        setTexto('');
+      }
+      return (
+        <div className="etiquetas">
+          {valor.length > 0 && (
+            <div className="chips">
+              {valor.map((v) => (
+                <span className="chip" key={v}>
+                  {v}
+                  <button type="button" aria-label={`Remover ${v}`} onClick={() => onChange(valor.filter((x) => x !== v))}>×</button>
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="linha-input">
+            <input id={id} value={texto} placeholder={placeholder} onChange={(e) => setTexto(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); adicionar(); } }}
+              onBlur={adicionar} disabled={valor.length >= max} />
+            <button type="button" className="btn mini" onClick={adicionar} disabled={!texto.trim()}>Adicionar</button>
+          </div>
+        </div>
+      );
+    }
+
+    function Eixo({ eixo, valor, onChange }) {
+      return (
+        <div className="eixo">
+          <div className="entre"><strong>{eixo.a}</strong><strong>{eixo.b}</strong></div>
+          <div className="escala" role="radiogroup" aria-label={`${eixo.a} a ${eixo.b}`}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button type="button" key={n} role="radio" aria-checked={valor === n}
+                className={valor === n ? 'ativo' : ''} onClick={() => onChange(n)}>{n}</button>
+            ))}
+          </div>
+          <p className="dica">{eixo.dica}</p>
+        </div>
+      );
+    }
+
+    // ---------- campos de cada etapa (usados no onboarding e em "Meu perfil") ----------
+
+    function CamposNegocio({ d, set }) {
+      const n = d.negocio || {};
+      const mudar = (campo) => (e) => set({ ...d, negocio: { ...n, [campo]: e.target.value } });
+      return (
+        <div className="stack">
+          <div>
+            <label htmlFor="n-faz">O que você faz?</label>
+            <textarea id="n-faz" rows="2" placeholder="Ex.: Faço bolos de pote e doces para festas em Campinas." value={n.oQueFaz || ''} onChange={mudar('oQueFaz')} />
+          </div>
+          <div>
+            <label htmlFor="n-quem">Para quem?</label>
+            <textarea id="n-quem" rows="2" placeholder="Ex.: Mães que organizam a festa dos filhos em casa e não têm tempo de cozinhar." value={n.paraQuem || ''} onChange={mudar('paraQuem')} />
+          </div>
+          <div>
+            <label htmlFor="n-dif">O que te diferencia? <span className="suave">(opcional)</span></label>
+            <textarea id="n-dif" rows="2" placeholder="Ex.: Massa sem conservante, entrega no mesmo dia." value={n.diferencial || ''} onChange={mudar('diferencial')} />
+          </div>
+          <div>
+            <label htmlFor="n-oferta">Oferta principal <span className="suave">(opcional)</span></label>
+            <input id="n-oferta" placeholder="Ex.: Kit festa com 30 bolos de pote" value={n.ofertaPrincipal || ''} onChange={mudar('ofertaPrincipal')} />
+          </div>
+          <div>
+            <label htmlFor="n-destino">Onde a venda acontece?</label>
+            <select id="n-destino" value={n.destinoVenda || ''} onChange={mudar('destinoVenda')}>
+              <option value="">Escolha</option>
+              {Object.entries(DESTINOS_VENDA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+            <p className="dica">É para lá que os roteiros de venda vão levar quem assiste.</p>
+          </div>
+        </div>
+      );
+    }
+
+    function CamposTom({ d, set }) {
+      const eixos = d.tom?.eixos || {};
+      return (
+        <div className="stack-lg">
+          {EIXOS.map((e) => (
+            <Eixo key={e.id} eixo={e} valor={eixos[e.id]}
+              onChange={(v) => set({ ...d, tom: { ...(d.tom || {}), eixos: { ...eixos, [e.id]: v } } })} />
+          ))}
+        </div>
+      );
+    }
+
+    function CamposExemplos({ d, set }) {
+      const exemplos = d.tom?.exemplosReais?.length ? d.tom.exemplosReais : ['', '', ''];
+      const mudar = (lista) => set({ ...d, tom: { ...(d.tom || {}), exemplosReais: lista } });
+      return (
+        <div className="stack">
+          {exemplos.map((ex, i) => (
+            <div key={i}>
+              <div className="entre" style={{ marginBottom: 7 }}>
+                <label htmlFor={`ex-${i}`} style={{ margin: 0 }}>Exemplo {i + 1}</label>
+                {exemplos.length > MIN_EXEMPLOS && (
+                  <button type="button" className="btn texto peq" onClick={() => mudar(exemplos.filter((_, j) => j !== i))}>Remover</button>
+                )}
+              </div>
+              <textarea id={`ex-${i}`} rows="5" value={ex} placeholder="Cole aqui uma legenda sua ou a transcrição de um vídeo em que você fala."
+                onChange={(e) => mudar(exemplos.map((x, j) => (j === i ? e.target.value : x)))} />
+              {ex.trim() && ex.trim().length < MIN_CARACTERES_EXEMPLO && <p className="dica">Um pouco mais: pelo menos {MIN_CARACTERES_EXEMPLO} caracteres.</p>}
+            </div>
+          ))}
+          {exemplos.length < MAX_EXEMPLOS && (
+            <button type="button" className="btn" onClick={() => mudar([...exemplos, ''])}>Adicionar mais um exemplo</button>
+          )}
+        </div>
+      );
+    }
+
+    function CamposExpressoes({ d, set }) {
+      return (
+        <div className="stack-lg">
+          <div>
+            <label htmlFor="expr">Expressões que você usa de verdade</label>
+            <Etiquetas id="expr" valor={d.expressoesQueUsa || []} max={30} placeholder='Ex.: "gente", "olha só", "bora"'
+              onChange={(v) => set({ ...d, expressoesQueUsa: v })} />
+            <p className="dica">Os roteiros usam no máximo 2 por vez, quando couber. Aperte Enter para adicionar cada uma.</p>
+          </div>
+          <div>
+            <label htmlFor="proib">Palavras que você não quer nos seus roteiros <span className="suave">(opcional)</span></label>
+            <Etiquetas id="proib" valor={d.palavrasProibidas || []} max={60} placeholder='Ex.: "gourmet", "imperdível"'
+              onChange={(v) => set({ ...d, palavrasProibidas: v })} />
+            <p className="dica">Essas palavras são barradas automaticamente em tudo que a plataforma escrever para você.</p>
+          </div>
+        </div>
+      );
+    }
+
+    function CamposTema({ d, set }) {
+      return (
+        <div className="stack-lg">
+          <div>
+            <label htmlFor="tema">Tema principal</label>
+            <input id="tema" placeholder="Ex.: Confeitaria caseira que vende" value={d.temaPrincipal || ''}
+              onChange={(e) => set({ ...d, temaPrincipal: e.target.value })} />
+          </div>
+          <div>
+            <label htmlFor="subtemas">Subtemas</label>
+            <Etiquetas id="subtemas" valor={d.subtemas || []} max={20} placeholder="Ex.: precificação, bastidores da produção, encomendas"
+              onChange={(v) => set({ ...d, subtemas: v })} />
+            <p className="dica">Os assuntos que giram em volta do tema principal. Eles orientam as sugestões de tema.</p>
+          </div>
+        </div>
+      );
+    }
+
+    function CampoPerfilDeVoz({ uid, d, set, rotuloBotao }) {
+      const [gerando, setGerando] = useState(false);
+      const [etapa, setEtapa] = useState('');
+      const [erro, setErro] = useState('');
+      const perfil = d.tom?.perfilDeVozExtraido || '';
+
+      async function gerar() {
+        setErro('');
+        setGerando(true);
+        setEtapa('Lendo seus exemplos...');
+        const t = setTimeout(() => setEtapa('Conferindo o texto...'), 6000);
+        try {
+          // Salva antes para a function ler a versão atual.
+          await salvarDna(uid, { tom: { exemplosReais: d.tom?.exemplosReais || [], eixos: d.tom?.eixos || {} }, expressoesQueUsa: d.expressoesQueUsa || [], palavrasProibidas: d.palavrasProibidas || [] });
+          const r = await chamar('extrairPerfilDeVoz');
+          set({ ...d, tom: { ...(d.tom || {}), perfilDeVozExtraido: r.perfilDeVoz, perfilDeVozPendencias: r.pendencias } });
+        } catch (e) {
+          setErro(mensagemErro(e));
+        }
+        clearTimeout(t);
+        setGerando(false);
+      }
+
+      return (
+        <div className="stack">
+          {!perfil && !gerando && (
+            <p className="suave">Com base nos seus exemplos, a plataforma descreve o seu jeito de escrever: ritmo, tamanho das frases, palavras e marcas de fala. Você revisa e ajusta.</p>
+          )}
+          {gerando ? (
+            <div className="carregando-ia"><span className="girando" /> {etapa}</div>
+          ) : (
+            <button type="button" className={'btn ' + (perfil ? '' : 'primario')} onClick={gerar}>
+              {perfil ? 'Gerar de novo a partir dos exemplos' : (rotuloBotao || 'Gerar meu perfil de voz')}
+            </button>
+          )}
+          {erro && <div className="erro" role="alert">{erro}</div>}
+          {perfil && !gerando && (
+            <div>
+              <label htmlFor="perfil-voz">Seu perfil de voz <span className="suave">(pode editar)</span></label>
+              <textarea id="perfil-voz" rows="10" value={perfil}
+                onChange={(e) => set({ ...d, tom: { ...(d.tom || {}), perfilDeVozExtraido: e.target.value } })} />
+              <p className="dica">É assim que a plataforma vai escrever como você. Se algo não parece seu, corrija aqui.</p>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const ETAPAS = [
+      { id: 'negocio', titulo: 'Seu negócio', sub: 'O básico para os roteiros falarem com as pessoas certas.', Campos: CamposNegocio,
+        ok: (d) => d.negocio?.oQueFaz?.trim() && d.negocio?.paraQuem?.trim() && DESTINOS_VENDA[d.negocio?.destinoVenda],
+        falta: 'Preencha o que você faz, para quem e onde a venda acontece.',
+        salvar: (d) => ({ negocio: d.negocio || {} }) },
+      { id: 'tom', titulo: 'Seu tom', sub: 'Marque de 1 a 5 onde você está em cada eixo. Não tem certo ou errado.', Campos: CamposTom,
+        ok: (d) => EIXOS.every((e) => d.tom?.eixos?.[e.id]),
+        falta: 'Marque os 4 eixos.',
+        salvar: (d) => ({ tom: { eixos: d.tom?.eixos || {} } }) },
+      { id: 'exemplos', titulo: 'Como você escreve', sub: 'Cole de 3 a 5 textos seus: legendas que você escreveu ou a transcrição de um vídeo seu falando. Use só textos seus, do seu jeito.', Campos: CamposExemplos,
+        ok: (d) => exemplosValidos(d).length >= MIN_EXEMPLOS,
+        falta: `Preciso de pelo menos ${MIN_EXEMPLOS} exemplos com ${MIN_CARACTERES_EXEMPLO} caracteres ou mais.`,
+        salvar: (d) => ({ tom: { exemplosReais: (d.tom?.exemplosReais || []).map((e) => e.trim()).filter(Boolean) } }) },
+      { id: 'expressoes', titulo: 'Suas palavras', sub: 'O que você fala de verdade, e o que não quer ver de jeito nenhum.', Campos: CamposExpressoes,
+        ok: () => true, falta: '',
+        salvar: (d) => ({ expressoesQueUsa: d.expressoesQueUsa || [], palavrasProibidas: d.palavrasProibidas || [] }) },
+      { id: 'tema', titulo: 'Seu tema', sub: 'Sobre o que o seu perfil fala.', Campos: CamposTema,
+        ok: (d) => d.temaPrincipal?.trim() && (d.subtemas || []).length > 0,
+        falta: 'Preencha o tema principal e pelo menos 1 subtema.',
+        salvar: (d) => ({ temaPrincipal: (d.temaPrincipal || '').trim(), subtemas: d.subtemas || [] }) },
+      { id: 'voz', titulo: 'Seu perfil de voz', sub: 'O resumo de como você escreve. É ele que deixa os roteiros com a sua cara.', Campos: null,
+        ok: (d) => d.tom?.perfilDeVozExtraido?.trim(),
+        falta: 'Gere o seu perfil de voz para concluir.',
+        salvar: (d) => ({ tom: { perfilDeVozExtraido: (d.tom?.perfilDeVozExtraido || '').trim() }, onboardingConcluido: true }) },
+    ];
+
+    function Onboarding({ uid, cliente, dna }) {
+      const [d, setD] = useState(dna || {});
+      const [i, setI] = useState(Math.min(dna?.etapaOnboarding || 0, ETAPAS.length - 1));
+      const [erro, setErro] = useState('');
+      const [salvando, setSalvando] = useState(false);
+      const etapa = ETAPAS[i];
+
+      async function avancar() {
+        setErro('');
+        if (!etapa.ok(d)) return setErro(etapa.falta);
+        setSalvando(true);
+        try {
+          await salvarDna(uid, { ...etapa.salvar(d), etapaOnboarding: Math.max(i + 1, dna?.etapaOnboarding || 0) });
+          if (i < ETAPAS.length - 1) {
+            setI(i + 1);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            toast('Perfil pronto. Agora os roteiros saem com a sua voz.');
+          }
+        } catch (e) {
+          setErro(mensagemErro(e));
+        }
+        setSalvando(false);
+      }
+
       return (
         <>
           <Cabecalho>
+            <button className="btn fantasma mini" onClick={() => auth.signOut()}>Sair</button>
+          </Cabecalho>
+          <main className="wrap conteudo estreito stack-lg">
+            {i === 0 && (
+              <div className="stack">
+                <span className="sobretitulo">Bem-vindo(a), {primeiroNome(cliente.nome)}</span>
+                <h1>Vamos montar o DNA do seu perfil</h1>
+                <p className="suave">São 6 passos rápidos. Com eles, a plataforma escreve roteiros com o seu jeito de falar, e dois perfis do mesmo nicho nunca recebem roteiros parecidos.</p>
+              </div>
+            )}
+            <div className="progresso" aria-label={`Passo ${i + 1} de ${ETAPAS.length}`}>
+              {ETAPAS.map((e, j) => (
+                <button key={e.id} type="button" className={j < i ? 'feito' : j === i ? 'atual' : ''}
+                  disabled={j > (dna?.etapaOnboarding || 0) || salvando} onClick={() => { setErro(''); setI(j); }}
+                  aria-label={`Passo ${j + 1}: ${e.titulo}`} />
+              ))}
+            </div>
+            <section className="cartao">
+              <div className="faixa" />
+              <div className="cartao-corpo stack-lg">
+                <div className="stack">
+                  <span className="sobretitulo">Passo {i + 1} de {ETAPAS.length}</span>
+                  <h2>{etapa.titulo}</h2>
+                  <p className="suave">{etapa.sub}</p>
+                </div>
+                {etapa.Campos ? <etapa.Campos d={d} set={setD} /> : <CampoPerfilDeVoz uid={uid} d={d} set={setD} />}
+                {erro && <div className="erro" role="alert">{erro}</div>}
+                <div className="entre">
+                  {i > 0 ? <button type="button" className="btn fantasma" onClick={() => { setErro(''); setI(i - 1); }} disabled={salvando}>Voltar</button> : <span />}
+                  <button type="button" className="btn primario" onClick={avancar} disabled={salvando}>
+                    {salvando ? <><span className="girando" /> Salvando...</> : i === ETAPAS.length - 1 ? 'Concluir' : 'Continuar'}
+                  </button>
+                </div>
+              </div>
+            </section>
+          </main>
+        </>
+      );
+    }
+
+    function MeuPerfil({ uid, dna, onVoltar }) {
+      const [d, setD] = useState(dna || {});
+      const [salvando, setSalvando] = useState(false);
+      const [erro, setErro] = useState('');
+      const falta = faltandoNoDna(d);
+
+      async function salvar() {
+        setErro('');
+        if (exemplosValidos(d).length < MIN_EXEMPLOS) return setErro(`Mantenha pelo menos ${MIN_EXEMPLOS} exemplos reais com ${MIN_CARACTERES_EXEMPLO} caracteres ou mais.`);
+        setSalvando(true);
+        try {
+          const tudo = ETAPAS.reduce((acc, e) => {
+            const p = e.salvar(d);
+            return { ...acc, ...p, tom: { ...(acc.tom || {}), ...(p.tom || {}) } };
+          }, {});
+          // No "Meu perfil" as listas são substituídas por inteiro (merge não remove itens de array).
+          await db.doc(`clientes/${uid}/dna/atual`).set({ ...dna, ...tudo, tom: { ...(dna?.tom || {}), ...tudo.tom }, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() });
+          toast('Perfil salvo.');
+          onVoltar();
+        } catch (e) {
+          setErro(mensagemErro(e));
+        }
+        setSalvando(false);
+      }
+
+      const secoes = [
+        ['Seu negócio', <CamposNegocio d={d} set={setD} />],
+        ['Seu tom', <CamposTom d={d} set={setD} />],
+        ['Como você escreve', <CamposExemplos d={d} set={setD} />],
+        ['Suas palavras', <CamposExpressoes d={d} set={setD} />],
+        ['Seu tema', <CamposTema d={d} set={setD} />],
+        ['Perfil de voz', <CampoPerfilDeVoz uid={uid} d={d} set={setD} />],
+      ];
+
+      return (
+        <>
+          <Cabecalho>
+            <button className="btn fantasma mini" onClick={onVoltar}>Voltar</button>
+          </Cabecalho>
+          <main className="wrap conteudo estreito stack-lg">
+            <div className="stack">
+              <span className="sobretitulo">DNA do perfil</span>
+              <h1>Meu perfil</h1>
+              <p className="suave">Tudo que a plataforma sabe sobre você para escrever com a sua voz. Mudou alguma coisa no negócio ou no jeito de falar? Atualize aqui.</p>
+            </div>
+            {secoes.map(([titulo, campos]) => (
+              <section className="cartao" key={titulo}>
+                <div className="cartao-corpo stack">
+                  <h2>{titulo}</h2>
+                  {campos}
+                </div>
+              </section>
+            ))}
+            {falta.length > 0 && <div className="aviso">Para gerar roteiros ainda falta: {falta.join(', ')}.</div>}
+            {erro && <div className="erro" role="alert">{erro}</div>}
+            <div className="barra-acoes">
+              <button className="btn" onClick={onVoltar} disabled={salvando}>Cancelar</button>
+              <button className="btn primario" onClick={salvar} disabled={salvando}>
+                {salvando ? <><span className="girando" /> Salvando...</> : 'Salvar perfil'}
+              </button>
+            </div>
+          </main>
+        </>
+      );
+    }
+
+    function InicioCliente({ cliente }) {
+      const dna = useDna(cliente.id);
+      const [tela, setTela] = useState('inicio');
+
+      if (dna === undefined) return <Carregando />;
+      const falta = faltandoNoDna(dna);
+      if (!dna?.onboardingConcluido) return <Onboarding uid={cliente.id} cliente={cliente} dna={dna} />;
+      if (tela === 'perfil') return <MeuPerfil uid={cliente.id} dna={dna} onVoltar={() => setTela('inicio')} />;
+
+      return (
+        <>
+          <Cabecalho>
+            <button className="btn fantasma mini" onClick={() => setTela('perfil')}>Meu perfil</button>
             <button className="btn fantasma mini" onClick={() => auth.signOut()}>Sair</button>
           </Cabecalho>
           <main className="wrap conteudo stack-lg">
@@ -974,9 +1412,20 @@
               <div className="boas-vindas stack">
                 <span className="sobretitulo">Sua área</span>
                 <h1>Olá, <em>{primeiroNome(cliente.nome)}</em>.</h1>
-                <p className="suave" style={{ maxWidth: 520 }}>
-                  Seu acesso está ativo. Em breve você monta aqui o DNA do seu perfil e começa a gerar roteiros com a sua voz.
-                </p>
+                {falta.length ? (
+                  <div className="aviso entre">
+                    <span>Para gerar roteiros, complete seu perfil. Falta: {falta.join(', ')}.</span>
+                    <button className="btn mini" onClick={() => setTela('perfil')}>Completar</button>
+                  </div>
+                ) : (
+                  <p className="suave" style={{ maxWidth: 560 }}>
+                    Seu perfil de voz está pronto. A criação de roteiros chega na próxima atualização da plataforma.
+                  </p>
+                )}
+                <div className="linha">
+                  <button className="btn primario" disabled title={falta.length ? 'Complete seu perfil primeiro' : 'Disponível na próxima atualização'}>Criar roteiro</button>
+                  <button className="btn" onClick={() => setTela('perfil')}>Ver meu perfil</button>
+                </div>
               </div>
             </div>
             <GuiaDeTeste crescimento={cliente.crescimento} />

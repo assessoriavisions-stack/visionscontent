@@ -37,7 +37,15 @@ Projeto Firebase: `visionscontent-cba52`. Não precisa de `gcloud`.
 2. Apagar os usuários antigos: no Console do Firebase, **Authentication > Usuários**,
    marque todos e apague.
 
-## 4. Publicar o backend (regras + functions)
+## 4. Chave da Anthropic (IA)
+
+Crie uma chave em https://console.anthropic.com (Settings > API Keys) e guarde no Secret Manager
+do Firebase. O comando pede para colar a chave; ela não aparece na tela e nunca vai para o site.
+```bash
+firebase functions:secrets:set ANTHROPIC_API_KEY --project visionscontent-cba52
+```
+
+## 5. Publicar o backend (regras + functions)
 
 ```bash
 cd functions && npm install && cd ..
@@ -48,7 +56,7 @@ firebase deploy --only firestore:rules,functions --project visionscontent-cba52
 - Na primeira vez o Firebase pode pedir para ativar APIs: responda **Y**.
 - Se aparecer a pergunta para apagar functions antigas (do sistema anterior): responda **Y**.
 
-## 5. Criar o seu login de admin (pelo Console)
+## 6. Criar o seu login de admin (pelo Console)
 
 1. **Authentication > Usuários > Adicionar usuário**: seu e-mail e uma senha.
 2. Copie o **UID do usuário** que aparece na lista.
@@ -59,12 +67,12 @@ firebase deploy --only firestore:rules,functions --project visionscontent-cba52
 
 Esse documento só pode ser criado pelo Console: ninguém consegue se tornar admin pelo app.
 
-## 6. Fechar o cadastro aberto
+## 7. Fechar o cadastro aberto
 
 **Authentication > Configurações > Ações do usuário**: desmarque **Ativar criação (inscrição)**.
 Assim só o admin cria logins (pelo painel da plataforma).
 
-## 7. Config web e site
+## 8. Config web e site
 
 1. **Configurações do projeto > Seus apps > Configuração do SDK**: copie `apiKey`,
    `messagingSenderId` e `appId` para o `FIREBASE_CONFIG` do `index.html` (ou mande para o Claude).
