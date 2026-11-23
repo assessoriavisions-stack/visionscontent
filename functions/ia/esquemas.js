@@ -85,6 +85,12 @@ const estrategia = obj({
   formatosPrioritarios: arr({ type: 'string', enum: Object.keys(cat.FORMATOS) }),
   observacaoFormatos: str,
   produtos: arr(obj({ nome: str, descricao: str, preco: str, paraQuem: str })),
+  negocio: obj({ oQueFaz: str, paraQuem: str, diferencial: str, ofertaPrincipal: str, destinoVenda: { type: 'string', enum: ['direct', 'whatsapp', 'link_bio', 'formulario', 'loja', ''] } }),
+  temaPrincipal: str,
+  subtemas: arr(str),
+  expressoesQueUsa: arr(str),
+  // 1 a 5 em cada eixo; 0 quando o plano não diz
+  eixos: obj({ tecnicoProximo: int, serioIrreverente: int, formalInformal: int, calmoIntenso: int }),
 });
 
 // Palavras faladas ÷ 2,5 por segundo.

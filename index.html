@@ -1732,7 +1732,12 @@
 
     function Onboarding({ uid, cliente, dna }) {
       const [d, setD] = useState(dna || {});
-      const [i, setI] = useState(Math.min(dna?.etapaOnboarding || 0, ETAPAS.length - 1));
+      // Passos que a Visions já preencheu pela estratégia ficam prontos: começa no primeiro que falta.
+      const prontosVisions = useMemo(() => ETAPAS.filter((e) => e.Campos && e.id !== 'exemplos' && (e.id === 'expressoes' ? (dna?.expressoesQueUsa?.length || dna?.palavrasProibidas?.length) : e.ok(dna || {}))).map((e) => e.id), []);
+      const primeiroQueFalta = useMemo(() => { const k = ETAPAS.findIndex((e) => !prontosVisions.includes(e.id)); return k < 0 ? ETAPAS.length - 1 : k; }, []);
+      const [i, setI] = useState(Math.min(Math.max(dna?.etapaOnboarding || 0, primeiroQueFalta), ETAPAS.length - 1));
+      const liberadoAte = Math.max(dna?.etapaOnboarding || 0, primeiroQueFalta);
+      const faltam = ETAPAS.filter((e) => !prontosVisions.includes(e.id));
       const [erro, setErro] = useState('');
       const [salvando, setSalvando] = useState(false);
       const etapa = ETAPAS[i];
@@ -1761,17 +1766,24 @@
             <button className="btn fantasma mini" onClick={() => auth.signOut()}>Sair</button>
           </Cabecalho>
           <main className="wrap conteudo estreito stack-lg">
-            {i === 0 && (
+            {i === primeiroQueFalta && !(dna?.etapaOnboarding > primeiroQueFalta) && (
               <div className="stack">
                 <span className="sobretitulo">Bem-vindo(a), {primeiroNome(cliente.nome)}</span>
                 <h1>Vamos montar o DNA do seu perfil</h1>
-                <p className="suave">São 7 passos rápidos. Com eles, a plataforma escreve roteiros com o seu jeito de falar, e dois perfis do mesmo nicho nunca recebem roteiros parecidos.</p>
+                {prontosVisions.length ? (
+                  <>
+                    <p className="suave">A Visions já preencheu {prontosVisions.map((id) => ETAPAS.find((e) => e.id === id).titulo.toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' e $1')}. Faltam só {faltam.length} {faltam.length === 1 ? 'passo' : 'passos'}: {faltam.map((e) => e.titulo.toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' e $1')}.</p>
+                    <p className="suave peq">Quer conferir o que foi preenchido? Toque nos tracinhos já marcados logo abaixo.</p>
+                  </>
+                ) : (
+                  <p className="suave">São 7 passos rápidos. Com eles, a plataforma escreve roteiros com o seu jeito de falar, e dois perfis do mesmo nicho nunca recebem roteiros parecidos.</p>
+                )}
               </div>
             )}
             <div className="progresso" aria-label={`Passo ${i + 1} de ${ETAPAS.length}`}>
               {ETAPAS.map((e, j) => (
                 <button key={e.id} type="button" className={j < i ? 'feito' : j === i ? 'atual' : ''}
-                  disabled={j > (dna?.etapaOnboarding || 0) || salvando} onClick={() => { setErro(''); setI(j); }}
+                  disabled={j > liberadoAte || salvando} onClick={() => { setErro(''); setI(j); }}
                   aria-label={`Passo ${j + 1}: ${e.titulo}`} />
               ))}
             </div>
@@ -1779,7 +1791,7 @@
               <div className="faixa" />
               <div className="cartao-corpo stack-lg">
                 <div className="stack">
-                  <span className="sobretitulo">Passo {i + 1} de {ETAPAS.length}</span>
+                  <span className="sobretitulo">Passo {i + 1} de {ETAPAS.length}{prontosVisions.includes(etapa.id) ? ' · preenchido pela Visions, confira' : ''}</span>
                   <h2>{etapa.titulo}</h2>
                   <p className="suave">{etapa.sub}</p>
                 </div>
@@ -3011,7 +3023,7 @@
       const dnaSalvo = useDoc(`clientes/${uid}/dna/atual`);
       const foco = useDoc(`clientes/${uid}/focos/${mesReferencia()}`);
       const [e, setE] = useState(null);
-      const [prod, setProd] = useState(null);
+      const [prod, setProd] = useState(null); // campos do DNA que o admin preenche (perfil do cliente + produtos)
       const [sugeridos, setSugeridos] = useState(null);
       const [pendencias, setPendencias] = useState([]);
       const [organizando, setOrganizando] = useState(false);
@@ -3020,7 +3032,12 @@
       const [tela, setTela] = useState('estrategia');
 
       useEffect(() => { if (salvo !== undefined && !e) setE({ ...ESTRATEGIA_VAZIA, ...(salvo || {}), branding: { ...ESTRATEGIA_VAZIA.branding, ...(salvo?.branding || {}) } }); }, [salvo]);
-      useEffect(() => { if (dnaSalvo !== undefined && !prod) setProd({ produtos: dnaSalvo?.produtos || [] }); }, [dnaSalvo]);
+      useEffect(() => {
+        if (dnaSalvo !== undefined && !prod) {
+          const x = dnaSalvo || {};
+          setProd({ produtos: x.produtos || [], negocio: x.negocio || {}, tom: { eixos: x.tom?.eixos || {} }, expressoesQueUsa: x.expressoesQueUsa || [], palavrasProibidas: x.palavrasProibidas || [], temaPrincipal: x.temaPrincipal || '', subtemas: x.subtemas || [] });
+        }
+      }, [dnaSalvo]);
       if (!e || !prod) return <Carregando />;
       if (tela === 'foco') return <FormFoco uid={uid} produtos={limparProdutos(prod.produtos)} quem="admin" cliente={cliente} onVoltar={() => setTela('estrategia')} />;
 
@@ -3035,6 +3052,17 @@
           const x = r.estrategia;
           setE({ ...e, branding: { ...ESTRATEGIA_VAZIA.branding, ...x.branding }, editorias: x.editorias, formatosPrioritarios: x.formatosPrioritarios, observacaoFormatos: x.observacaoFormatos });
           setSugeridos(x.produtos?.length ? x.produtos : null);
+          // Perfil do cliente: só preenche o que veio do plano e ainda está vazio.
+          if (x.negocio || x.temaPrincipal) {
+            const n = { ...(prod.negocio || {}) };
+            for (const k of ['oQueFaz', 'paraQuem', 'diferencial', 'ofertaPrincipal', 'destinoVenda']) if (!n[k] && x.negocio?.[k]) n[k] = x.negocio[k];
+            const eixos = { ...(prod.tom?.eixos || {}) };
+            for (const [k, v] of Object.entries(x.eixos || {})) if (!eixos[k] && v >= 1 && v <= 5) eixos[k] = v;
+            setProd({ ...prod, negocio: n, tom: { eixos },
+              temaPrincipal: prod.temaPrincipal || x.temaPrincipal || '',
+              subtemas: prod.subtemas?.length ? prod.subtemas : (x.subtemas || []),
+              expressoesQueUsa: prod.expressoesQueUsa?.length ? prod.expressoesQueUsa : (x.expressoesQueUsa || []) });
+          }
           setPendencias(r.pendencias || []);
           toast('Plano organizado. Revise os campos e salve.');
         } catch (err) {
@@ -3055,10 +3083,18 @@
             observacaoFormatos: (e.observacaoFormatos || '').trim(),
             atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
           });
-          const produtos = limparProdutos(prod.produtos);
-          if (JSON.stringify(produtos) !== JSON.stringify(limparProdutos(dnaSalvo?.produtos))) {
-            await db.doc(`clientes/${uid}/dna/atual`).set({ produtos, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-          }
+          // Perfil do cliente (DNA): o que a Visions preencher aqui o cliente não precisa responder de novo.
+          const eixos = Object.fromEntries(Object.entries(prod.tom?.eixos || {}).filter(([, v]) => v >= 1 && v <= 5));
+          await db.doc(`clientes/${uid}/dna/atual`).set({
+            produtos: limparProdutos(prod.produtos),
+            negocio: Object.fromEntries(Object.entries(prod.negocio || {}).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v])),
+            ...(Object.keys(eixos).length ? { tom: { eixos } } : {}),
+            expressoesQueUsa: prod.expressoesQueUsa || [],
+            palavrasProibidas: prod.palavrasProibidas || [],
+            temaPrincipal: (prod.temaPrincipal || '').trim(),
+            subtemas: prod.subtemas || [],
+            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+          }, { merge: true });
           toast('Estratégia salva.');
           onVoltar();
         } catch (err) {
@@ -3131,6 +3167,20 @@
               <div><label htmlFor="obs-f">Observação sobre formatos</label><input id="obs-f" placeholder="Ex.: reels 3x por semana, talking head na cozinha" value={e.observacaoFormatos} onChange={(ev) => setE({ ...e, observacaoFormatos: ev.target.value })} /></div>
             </div></section>
 
+            <section className="cartao"><div className="cartao-corpo stack-lg">
+              <div className="stack">
+                <h2>Perfil do cliente</h2>
+                <p className="suave peq">O que você preencher aqui o cliente não precisa responder no primeiro acesso. Os exemplos reais de como ele escreve e o perfil de voz continuam com ele.</p>
+              </div>
+              <CamposNegocio d={prod} set={setProd} />
+              <CamposTema d={prod} set={setProd} />
+              <div className="stack">
+                <h3>Tom <span className="suave peq">(opcional)</span></h3>
+                <CamposTom d={prod} set={setProd} />
+              </div>
+              <CamposExpressoes d={prod} set={setProd} />
+            </div></section>
+
             <section className="cartao"><div className="cartao-corpo stack">
               <h2>Produtos</h2>
               <p className="suave peq">Os mesmos do perfil do cliente. O que você mudar aqui aparece para ele também.</p>
@@ -3138,8 +3188,8 @@
                 <div className="aviso stack">
                   <span>A IA encontrou {sugeridos.length} produto(s) no plano: {sugeridos.map((p) => p.nome).join(', ')}.</span>
                   <div className="linha">
-                    <button className="btn mini" onClick={() => { setProd({ produtos: sugeridos }); setSugeridos(null); }}>Usar estes</button>
-                    <button className="btn mini" onClick={() => { setProd({ produtos: [...limparProdutos(prod.produtos), ...sugeridos] }); setSugeridos(null); }}>Somar aos atuais</button>
+                    <button className="btn mini" onClick={() => { setProd({ ...prod, produtos: sugeridos }); setSugeridos(null); }}>Usar estes</button>
+                    <button className="btn mini" onClick={() => { setProd({ ...prod, produtos: [...limparProdutos(prod.produtos), ...sugeridos] }); setSugeridos(null); }}>Somar aos atuais</button>
                     <button className="btn mini fantasma" onClick={() => setSugeridos(null)}>Ignorar</button>
                   </div>
                 </div>

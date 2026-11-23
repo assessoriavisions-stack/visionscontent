@@ -285,7 +285,11 @@ Campos:
 - editorias: as linhas editoriais de conteúdo, cada uma com nome curto, descrição de uma frase e pilar (P1 demanda, P2 venda, P3 fidelização; vazio se o plano não disser).
 - formatosPrioritarios: formatos que o plano prioriza, usando só estes ids: reels, carrossel, post_unico, serie, sequencia_stories, story_unico.
 - observacaoFormatos: observação do plano sobre formatos (frequência, estilo de gravação), ou vazio.
-- produtos: produtos e serviços citados, com nome, descricao, preco (como está escrito no plano, ou vazio) e paraQuem.`;
+- produtos: produtos e serviços citados, com nome, descricao, preco (como está escrito no plano, ou vazio) e paraQuem.
+- negocio.oQueFaz: uma frase com o que a pessoa faz e onde. negocio.paraQuem: o público, numa frase. negocio.diferencial e negocio.ofertaPrincipal: do plano, ou vazio. negocio.destinoVenda: onde a venda acontece (direct, whatsapp, link_bio, formulario, loja), ou vazio.
+- temaPrincipal: o assunto central do perfil, em poucas palavras. subtemas: de 3 a 8 assuntos que giram em volta dele.
+- expressoesQueUsa: bordões ou frases que o plano diz que a pessoa usa de verdade (lista vazia se não houver).
+- eixos: de 1 a 5 em cada eixo (tecnicoProximo: 1 técnico, 5 próximo; serioIrreverente: 1 sério, 5 irreverente; formalInformal: 1 formal, 5 informal; calmoIntenso: 1 calmo, 5 intenso), só se o plano descrever o jeito de falar; senão 0.`;
 
 module.exports.montarPromptRoteiro = montarPromptRoteiro;
 module.exports.SYSTEM_TEMAS = SYSTEM_TEMAS;

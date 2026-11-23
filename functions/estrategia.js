@@ -58,6 +58,11 @@ registrarRespostaFalsa('estrategia', () => ({
   formatosPrioritarios: ['reels', 'carrossel'],
   observacaoFormatos: 'Reels 3 vezes por semana — talking head na cozinha.',
   produtos: [{ nome: 'Kit festa 30 potes', descricao: 'Bolos de pote sortidos.', preco: 'R$ 270', paraQuem: 'Festas de até 30 pessoas' }],
+  negocio: { oQueFaz: 'Bolos de pote e doces para festas em Campinas.', paraQuem: 'Mães que organizam festa em casa.', diferencial: 'Entrega no mesmo dia.', ofertaPrincipal: 'Kit festa 30 potes', destinoVenda: 'whatsapp' },
+  temaPrincipal: 'Confeitaria caseira que vende',
+  subtemas: ['forno', 'precificação', 'bastidores'],
+  expressoesQueUsa: ['gente', 'olha só'],
+  eixos: { tecnicoProximo: 5, serioIrreverente: 4, formalInformal: 5, calmoIntenso: 0 },
 }));
 registrarRespostaFalsa('estrategiaReescrita', ({ mensagens }) => mensagens[mensagens.length - 2].content.replace(' — talking head', ', talking head'));
 

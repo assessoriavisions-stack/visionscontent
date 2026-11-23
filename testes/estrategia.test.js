@@ -57,6 +57,8 @@ test('estratégia, produtos e foco do mês', async (t) => {
     const r = await A.chamar('adminExtrairEstrategia', { plano: PLANO });
     assert.ok(r.estrategia.branding.posicionamento);
     assert.equal(r.estrategia.editorias.length, 3);
+    assert.equal(r.estrategia.negocio.destinoVenda, 'whatsapp');
+    assert.equal(r.estrategia.subtemas.length, 3);
     assert.doesNotMatch(r.estrategia.observacaoFormatos, /[—–]/);
     assert.deepEqual(r.pendencias, []);
   });
