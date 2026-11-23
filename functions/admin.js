@@ -66,6 +66,26 @@ function crescimento(v) {
   return { fase: 'vencedor_definido', vencedor };
 }
 
+// Mistura de pilares personalizada por objetivo: { crescer: {P1,P2,P3} | null, ... }. Cada uma soma 100.
+function mixPersonalizado(v) {
+  if (v === null) return null;
+  if (!v || typeof v !== 'object') throw new HttpsError('invalid-argument', 'Mistura de pilares inválida.');
+  const saida = {};
+  for (const [obj, mix] of Object.entries(v)) {
+    if (!(obj in cat.OBJETIVOS_PERFIL)) throw new HttpsError('invalid-argument', 'Objetivo de perfil inválido.');
+    if (mix === null) continue; // volta para o padrão do método
+    const nums = ['P1', 'P2', 'P3'].map((p) => Number(mix?.[p]));
+    if (nums.some((n) => !Number.isInteger(n) || n < 0 || n > 100)) {
+      throw new HttpsError('invalid-argument', 'As porcentagens precisam ser números inteiros de 0 a 100.');
+    }
+    if (nums[0] + nums[1] + nums[2] !== 100) {
+      throw new HttpsError('invalid-argument', `A mistura de "${cat.OBJETIVOS_PERFIL[obj].nome}" precisa somar 100%.`);
+    }
+    saida[obj] = { P1: nums[0], P2: nums[1], P3: nums[2] };
+  }
+  return Object.keys(saida).length ? saida : null;
+}
+
 function uidValido(v) {
   if (typeof v !== 'string' || !v) throw new HttpsError('invalid-argument', 'Cliente não informado.');
   return v;
@@ -141,6 +161,7 @@ exports.adminAtualizarCliente = callableAdmin(async ({ data }) => {
   if ('perfilInstagram' in data) mudancas.perfilInstagram = perfil(data.perfilInstagram);
   if ('venceEm' in data) mudancas.venceEm = vencimento(data.venceEm);
   if ('limiteGeracoesMes' in data) mudancas.limiteGeracoesMes = limite(data.limiteGeracoesMes);
+  if ('mixPersonalizado' in data) mudancas.mixPersonalizado = mixPersonalizado(data.mixPersonalizado);
   if ('crescimento' in data) {
     mudancas.crescimento = { ...crescimento(data.crescimento), definidoEm: FieldValue.serverTimestamp() };
   }

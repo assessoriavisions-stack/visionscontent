@@ -310,6 +310,17 @@
     .chip-escolha { border: 1px solid var(--linha); background: var(--superficie); border-radius: 999px; padding: 7px 14px; cursor: pointer; font-size: 14px; color: var(--tinta-2); }
     .chip-escolha.ativo { background: var(--tinta); border-color: var(--tinta); color: var(--marfim); }
 
+    /* Mistura de pilares */
+    .mistura { display: flex; flex-direction: column; gap: 10px; }
+    .barra-dupla { position: relative; height: 8px; border-radius: 99px; background: var(--linha-2); overflow: hidden; margin-top: 5px; }
+    .barra-dupla .meta { position: absolute; inset: 0 auto 0 0; background: repeating-linear-gradient(90deg, #E3DDCF 0 4px, transparent 4px 8px); }
+    .barra-dupla .feito { position: absolute; inset: 0 auto 0 0; background: var(--azul); border-radius: 99px; }
+    .objetivo-perfil { display: inline-block; align-self: flex-start; background: var(--azul-claro); color: var(--azul); border-radius: 999px; padding: 4px 12px; font-size: 13px; font-weight: 500; }
+    .mix-campos { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .mix-campo { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; color: var(--suave); }
+    .mix-campo input { width: 72px; min-height: 40px; padding: 8px 10px; text-align: right; }
+    .texto-erro { color: var(--vermelho); font-weight: 600; }
+
     /* Fase de crescimento */
     .selo.testes { background: var(--azul-claro); color: var(--azul); }
     .selo.vencedor { background: var(--amarelo-claro); color: #8A6400; }
@@ -638,6 +649,7 @@
         vAngulo: cliente?.crescimento?.vencedor?.angulo || '',
         vTipoGancho: cliente?.crescimento?.vencedor?.tipoGancho || '',
         vObs: cliente?.crescimento?.vencedor?.observacao || '',
+        mix: Object.fromEntries(Object.keys(OBJETIVOS_PERFIL).map((o) => [o, { ...(cliente?.mixPersonalizado?.[o] || OBJETIVOS_PERFIL[o].mix) }])),
       });
       const [erro, setErro] = useState('');
       const [salvando, setSalvando] = useState(false);
@@ -649,6 +661,11 @@
         if (!f.nome.trim()) return setErro('Preencha o nome.');
         if (!editando && !f.email.trim()) return setErro('Preencha o e-mail.');
         if (editando && f.fase === 'vencedor_definido' && !f.vFormato) return setErro('Escolha pelo menos o formato vencedor.');
+        if (editando) {
+          for (const [o, m] of Object.entries(f.mix)) {
+            if (Number(m.P1) + Number(m.P2) + Number(m.P3) !== 100) return setErro(`A mistura de "${OBJETIVOS_PERFIL[o].nome}" precisa somar 100%.`);
+          }
+        }
         setSalvando(true);
         const base = {
           nome: f.nome,
@@ -665,7 +682,13 @@
               cliente.crescimento?.fase === 'vencedor_definido'
                 ? { fase: 'vencedor_definido', vencedor: { formato: cliente.crescimento.vencedor?.formato || '', formatoVisual: cliente.crescimento.vencedor?.formatoVisual || null, angulo: cliente.crescimento.vencedor?.angulo || null, tipoGancho: cliente.crescimento.vencedor?.tipoGancho || null, observacao: cliente.crescimento.vencedor?.observacao || '' } }
                 : { fase: 'testes' });
-            await chamar('adminAtualizarCliente', { uid: cliente.id, ...base, ...(mudouFase ? { crescimento } : {}) });
+            // Só guarda o que for diferente do padrão do método.
+            const mixPersonalizado = Object.fromEntries(Object.entries(f.mix).map(([o, m]) => {
+              const n = { P1: Number(m.P1), P2: Number(m.P2), P3: Number(m.P3) };
+              const padrao = OBJETIVOS_PERFIL[o].mix;
+              return [o, n.P1 === padrao.P1 && n.P2 === padrao.P2 && n.P3 === padrao.P3 ? null : n];
+            }));
+            await chamar('adminAtualizarCliente', { uid: cliente.id, ...base, mixPersonalizado, ...(mudouFase ? { crescimento } : {}) });
             toast('Cliente atualizado.');
             onFechar();
           } else {
@@ -706,6 +729,33 @@
                 <p className="dica">Controle de custo. Em branco: sem limite.</p>
               </div>
             </div>
+            {editando && (
+              <div className="secao-form stack">
+                <div>
+                  <span className="sobretitulo">Mistura de pilares por objetivo</span>
+                  <p className="dica" style={{ marginTop: 4 }}>O cliente escolhe o objetivo no foco do mês. Aqui você ajusta as porcentagens só para este cliente. Cada linha soma 100%.</p>
+                </div>
+                {Object.entries(OBJETIVOS_PERFIL).map(([o, info]) => {
+                  const m = f.mix[o];
+                  const soma = Number(m.P1) + Number(m.P2) + Number(m.P3);
+                  const mudarMix = (p) => (ev) => setF({ ...f, mix: { ...f.mix, [o]: { ...m, [p]: ev.target.value } } });
+                  return (
+                    <div key={o}>
+                      <div className="entre" style={{ marginBottom: 6 }}>
+                        <label style={{ margin: 0 }}>{info.nome}</label>
+                        <span className={'peq num ' + (soma === 100 ? 'suave' : 'texto-erro')}>{soma}%</span>
+                      </div>
+                      <div className="mix-campos">
+                        {['P1', 'P2', 'P3'].map((p) => (
+                          <label key={p} className="mix-campo"><span>{p}</span><input type="number" min="0" max="100" inputMode="numeric" value={m[p]} onChange={mudarMix(p)} /><span>%</span></label>
+                        ))}
+                        <button type="button" className="btn texto peq" onClick={() => setF({ ...f, mix: { ...f.mix, [o]: { ...info.mix } } })}>Padrão</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             {editando && (
               <div className="secao-form stack">
                 <div>
@@ -1470,11 +1520,62 @@
     // Fase 3: criar roteiro (wizard da seção 8.1) e ver o resultado
     // ==========================================================
     const PILARES = {
-      P1: { nome: 'P1 · Demanda', objetivo: 'Gerar demanda e alcançar quem ainda não te conhece', kpi: 'Compartilhamento', estilos: ['analise', 'pauta_quente', 'cultura_pop'] },
+      P1: { nome: 'P1 · Atração', objetivo: 'Atrair quem ainda não te conhece e aumentar a base', kpi: 'Compartilhamento', estilos: ['analise', 'pauta_quente', 'cultura_pop'] },
       P2: { nome: 'P2 · Venda', objetivo: 'Vender', kpi: 'Conversão (direct, link, mensagem)', estilos: ['historia', 'prova_social', 'tecnico', 'transformacao'] },
       P3: { nome: 'P3 · Fidelização', objetivo: 'Fidelizar quem já te segue', kpi: 'Comentários, curtidas e salvamentos', estilos: ['noticia', 'analise', 'desejo', 'opiniao'] },
     };
     const ESTILOS = { analise: 'Análise', pauta_quente: 'Pauta quente', cultura_pop: 'Cultura pop', historia: 'História', prova_social: 'Prova social', tecnico: 'Técnico', transformacao: 'Transformação', noticia: 'Notícia', desejo: 'Desejo', opiniao: 'Opinião', bastidor: 'Bastidor', interacao: 'Enquete / caixinha' };
+    const PARA_QUE_SERVE = {
+      P1: 'Para quem ainda não te segue. O post precisa ser bom de compartilhar: quem assiste manda para alguém.',
+      P2: 'Para quem já te acompanha e está perto de comprar. O post leva para o direct, o link ou o WhatsApp.',
+      P3: 'Para quem já te segue. O post gera conversa, salvamento e confiança.',
+    };
+    const OBJETIVOS_PERFIL = {
+      crescer: { nome: 'Crescer o perfil', descricao: 'Alcançar gente nova e ganhar seguidores', mix: { P1: 60, P2: 15, P3: 25 } },
+      autoridade: { nome: 'Aumentar a autoridade', descricao: 'Ser lembrada como referência no assunto', mix: { P1: 30, P2: 20, P3: 50 } },
+      vender: { nome: 'Vender com o perfil', descricao: 'Transformar seguidores em clientes', mix: { P1: 25, P2: 50, P3: 25 } },
+    };
+    const mixDoCliente = (objetivo, cliente) => (OBJETIVOS_PERFIL[objetivo] ? (cliente?.mixPersonalizado?.[objetivo] || OBJETIVOS_PERFIL[objetivo].mix) : null);
+
+    // Roteiros criados no mês atual, por pilar.
+    function useContagemDoMes(uid) {
+      const [c, setC] = useState(null);
+      useEffect(() => {
+        const inicio = firebase.firestore.Timestamp.fromDate(new Date(`${mesReferencia()}-01T00:00:00-03:00`));
+        return db.collection(`clientes/${uid}/roteiros`).where('criadoEm', '>=', inicio).onSnapshot((snap) => {
+          const x = { P1: 0, P2: 0, P3: 0, total: 0 };
+          snap.docs.forEach((d) => { const p = d.data().pilar; if (x[p] !== undefined) { x[p]++; x.total++; } });
+          setC(x);
+        }, () => setC({ P1: 0, P2: 0, P3: 0, total: 0 }));
+      }, [uid]);
+      return c;
+    }
+
+    // O pilar que mais está faltando para chegar na mistura do objetivo.
+    function pilarSugerido(mix, contagem) {
+      if (!mix || !contagem) return null;
+      const proximoTotal = contagem.total + 1;
+      return ['P1', 'P2', 'P3'].map((p) => ({ p, falta: (mix[p] / 100) * proximoTotal - contagem[p] }))
+        .sort((a, b) => b.falta - a.falta)[0].p;
+    }
+
+    function MisturaDoMes({ mix, contagem }) {
+      if (!mix || !contagem) return null;
+      return (
+        <div className="mistura">
+          {['P1', 'P2', 'P3'].map((p) => {
+            const feito = contagem.total ? Math.round((contagem[p] / contagem.total) * 100) : 0;
+            return (
+              <div className="mistura-linha" key={p}>
+                <div className="entre peq"><span><strong>{PILARES[p].nome}</strong></span><span className="num suave">{contagem[p]} post{contagem[p] === 1 ? '' : 's'} · {feito}% de {mix[p]}%</span></div>
+                <div className="barra-dupla"><i className="meta" style={{ width: mix[p] + '%' }} /><i className="feito" style={{ width: Math.min(feito, 100) + '%' }} /></div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
     const FORMATOS_INFO = {
       reels: 'Fura a bolha: alcança quem ainda não te segue.',
       carrossel: 'Alta performance com quem já te segue. Um slide puxa o outro.',
@@ -1529,7 +1630,7 @@
       );
     }
 
-    function CriarRoteiro({ dna, estrategia, onPronto, onVoltar }) {
+    function CriarRoteiro({ dna, estrategia, mix, contagem, objetivoPerfil, onPronto, onVoltar }) {
       const [e, setE] = useState({});
       const [passo, setPasso] = useState('formato');
       const [temas, setTemas] = useState(null);
@@ -1633,8 +1734,26 @@
         corpo = <Opcoes valor={e.formato} onEscolher={(v) => proximo('formato', escolher('formato', v))}
           opcoes={['reels', 'carrossel', 'post_unico', 'serie', 'sequencia_stories', 'story_unico'].map((id) => ({ id, titulo: FORMATOS[id], texto: FORMATOS_INFO[id] }))} />;
       } else if (passo === 'pilar') {
-        corpo = <Opcoes valor={e.pilar} onEscolher={(v) => proximo('pilar', escolher('pilar', v))}
-          opcoes={Object.entries(PILARES).map(([id, p]) => ({ id, titulo: p.nome, texto: p.objetivo, selo: `KPI: ${p.kpi}` }))} />;
+        const sugerido = pilarSugerido(mix, contagem);
+        corpo = (
+          <div className="stack">
+            {mix ? (
+              <p className="suave peq">
+                Seu objetivo em {nomeDoMesRef(mesReferencia())} é <strong style={{ color: 'var(--tinta)' }}>{OBJETIVOS_PERFIL[objetivoPerfil].nome.toLowerCase()}</strong>.
+                {sugerido && <> Pela mistura do mês, o que mais está faltando é <strong style={{ color: 'var(--tinta)' }}>{PILARES[sugerido].nome}</strong>.</>}
+              </p>
+            ) : (
+              <p className="suave peq">Defina o objetivo do perfil no foco do mês para a plataforma sugerir o pilar que está faltando.</p>
+            )}
+            <Opcoes valor={e.pilar} onEscolher={(v) => proximo('pilar', escolher('pilar', v))}
+              opcoes={Object.entries(PILARES).map(([id, p]) => ({
+                id, titulo: p.nome,
+                texto: `${PARA_QUE_SERVE[id]} Mede: ${p.kpi.toLowerCase()}.`,
+                selo: mix ? `${id === sugerido ? 'Sugerido · ' : ''}meta ${mix[id]}% do mês · feitos ${contagem?.[id] ?? 0}` : null,
+              }))} />
+            <MisturaDoMes mix={mix} contagem={contagem} />
+          </div>
+        );
       } else if (passo === 'estilo') {
         corpo = <Opcoes valor={e.estilo} onEscolher={(v) => proximo('estilo', escolher('estilo', v))}
           opcoes={estilosValidos(e.formato, e.pilar).map((id) => ({ id, titulo: ESTILOS[id] }))} />;
@@ -1735,7 +1854,7 @@
           <main className="wrap conteudo estreito stack-lg">
             <div className="stack">
               <span className="sobretitulo">Novo roteiro · passo {idx + 1} de {passos.length}</span>
-              <h1>{{ formato: 'Qual formato?', pilar: 'Qual o objetivo?', estilo: 'Qual estilo de roteiro?', angulo: 'Por qual ângulo?', tema: 'Qual o tema?', framework: 'Qual estrutura?', visual: 'Como vai ser gravado?', cta: 'Como termina?', revisar: 'Tudo certo?' }[passo]}</h1>
+              <h1>{{ formato: 'Qual formato?', pilar: 'Qual o objetivo deste post?', estilo: 'Qual estilo de roteiro?', angulo: 'Por qual ângulo?', tema: 'Qual o tema?', framework: 'Qual estrutura?', visual: 'Como vai ser gravado?', cta: 'Como termina?', revisar: 'Tudo certo?' }[passo]}</h1>
             </div>
             {idx > 0 && passo !== 'revisar' && (
               <div className="trilha">
@@ -2055,7 +2174,7 @@
     const campanhaVigente = (foco) => (foco?.campanha?.ativa && foco.campanha.nome && !(foco.campanha.fim && foco.campanha.fim < hojeISO()) ? foco.campanha : null);
     const CAMPANHA_VAZIA = { ativa: false, nome: '', oferta: '', mecanica: '', regras: '', inicio: '', fim: '', comoParticipar: '', cta: '' };
 
-    function FormFoco({ uid, produtos = [], quem, onVoltar }) {
+    function FormFoco({ uid, produtos = [], quem, cliente, onVoltar }) {
       const mes = mesReferencia();
       const [f, setF] = useState(null);
       const [veioDoAnterior, setVeioDoAnterior] = useState(null);
@@ -2074,9 +2193,9 @@
             const c = { ...CAMPANHA_VAZIA, ...(doc.data().campanha || {}) };
             // Campanha que já acabou não vem marcada.
             if (c.fim && c.fim < hojeISO()) c.ativa = false;
-            return setF({ produtoFoco: doc.data().produtoFoco || '', objetivo: doc.data().objetivo || '', campanha: c });
+            return setF({ objetivoPerfil: doc.data().objetivoPerfil || '', produtoFoco: doc.data().produtoFoco || '', objetivo: doc.data().objetivo || '', campanha: c });
           }
-          setF({ produtoFoco: produtos[0]?.nome || '', objetivo: '', campanha: { ...CAMPANHA_VAZIA } });
+          setF({ objetivoPerfil: '', produtoFoco: produtos[0]?.nome || '', objetivo: '', campanha: { ...CAMPANHA_VAZIA } });
         })();
       }, [uid, mes]);
 
@@ -2088,6 +2207,7 @@
 
       async function salvar() {
         setErro('');
+        if (!OBJETIVOS_PERFIL[f.objetivoPerfil]) return setErro('Escolha o objetivo do perfil neste mês.');
         if (!f.produtoFoco?.trim() && !f.objetivo?.trim()) return setErro('Escolha o produto em destaque ou escreva o objetivo do mês.');
         if (c.ativa && !c.nome?.trim()) return setErro('Dê um nome para a campanha.');
         if (c.ativa && !c.mecanica?.trim()) return setErro('Explique a mecânica da campanha: é ela que os roteiros vão usar.');
@@ -2095,6 +2215,7 @@
         setSalvando(true);
         try {
           await db.doc(`clientes/${uid}/focos/${mes}`).set({
+            objetivoPerfil: f.objetivoPerfil,
             produtoFoco: (f.produtoFoco || '').trim(),
             objetivo: (f.objetivo || '').trim(),
             campanha: c.ativa ? Object.fromEntries(Object.entries(c).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v])) : { ...CAMPANHA_VAZIA },
@@ -2119,6 +2240,16 @@
               <p className="suave">O foco muda o CTA e o assunto dos roteiros de venda. Defina todo mês, mesmo que repita o anterior.</p>
               {veioDoAnterior && <div className="aviso">Trouxe o foco de {nomeDoMesRef(veioDoAnterior)} para você ajustar. Confira antes de salvar.</div>}
             </div>
+            <section className="cartao"><div className="cartao-corpo stack">
+              <h2>Objetivo do perfil</h2>
+              <p className="suave peq">Ele define a mistura de posts do mês: quanto de atração, de venda e de fidelização.</p>
+              <Opcoes valor={f.objetivoPerfil} onEscolher={(v) => setF({ ...f, objetivoPerfil: v })}
+                opcoes={Object.entries(OBJETIVOS_PERFIL).map(([id, o]) => {
+                  const m = mixDoCliente(id, cliente);
+                  return { id, titulo: o.nome, texto: o.descricao, selo: `P1 ${m.P1}% · P2 ${m.P2}% · P3 ${m.P3}%` };
+                })} />
+            </div></section>
+
             <section className="cartao"><div className="cartao-corpo stack">
               <h2>Destaque do mês</h2>
               <div>
@@ -2188,7 +2319,7 @@
       );
     }
 
-    function CartaoFoco({ foco, onEditar }) {
+    function CartaoFoco({ foco, onEditar, mix, contagem }) {
       const mes = mesReferencia();
       if (foco === undefined) return null;
       if (!foco) {
@@ -2213,6 +2344,7 @@
               <span className="sobretitulo">Foco de {nomeDoMesRef(mes)}</span>
               <button className="btn mini" onClick={onEditar}>Editar</button>
             </div>
+            {OBJETIVOS_PERFIL[foco.objetivoPerfil] && <p className="objetivo-perfil">{OBJETIVOS_PERFIL[foco.objetivoPerfil].nome}</p>}
             {foco.produtoFoco && <h3>{foco.produtoFoco}</h3>}
             {foco.objetivo && <p className="suave">{foco.objetivo}</p>}
             {c && (
@@ -2223,6 +2355,13 @@
                 {c.mecanica && <p className="suave peq">{c.mecanica}</p>}
               </div>
             )}
+            {mix && (
+              <div className="stack">
+                <span className="sobretitulo">Mistura do mês</span>
+                <MisturaDoMes mix={mix} contagem={contagem} />
+              </div>
+            )}
+            {!mix && <p className="peq suave">Escolha o objetivo do perfil no foco para ver a mistura de posts do mês.</p>}
           </div>
         </section>
       );
@@ -2277,7 +2416,7 @@
       useEffect(() => { if (salvo !== undefined && !e) setE({ ...ESTRATEGIA_VAZIA, ...(salvo || {}), branding: { ...ESTRATEGIA_VAZIA.branding, ...(salvo?.branding || {}) } }); }, [salvo]);
       useEffect(() => { if (dnaSalvo !== undefined && !prod) setProd({ produtos: dnaSalvo?.produtos || [] }); }, [dnaSalvo]);
       if (!e || !prod) return <Carregando />;
-      if (tela === 'foco') return <FormFoco uid={uid} produtos={limparProdutos(prod.produtos)} quem="admin" onVoltar={() => setTela('estrategia')} />;
+      if (tela === 'foco') return <FormFoco uid={uid} produtos={limparProdutos(prod.produtos)} quem="admin" cliente={cliente} onVoltar={() => setTela('estrategia')} />;
 
       const b = e.branding;
       const mudarB = (k) => (ev) => setE({ ...e, branding: { ...b, [k]: ev.target.value } });
@@ -2364,7 +2503,7 @@
                     <div><label>Nome</label><input value={x.nome} onChange={(ev) => setE({ ...e, editorias: e.editorias.map((y, j) => (j === i ? { ...y, nome: ev.target.value } : y)) })} /></div>
                     <div><label>Pilar</label>
                       <select value={x.pilar || ''} onChange={(ev) => setE({ ...e, editorias: e.editorias.map((y, j) => (j === i ? { ...y, pilar: ev.target.value } : y)) })}>
-                        <option value="">Qualquer</option><option value="P1">P1 · Demanda</option><option value="P2">P2 · Venda</option><option value="P3">P3 · Fidelização</option>
+                        <option value="">Qualquer</option><option value="P1">P1 · Atração</option><option value="P2">P2 · Venda</option><option value="P3">P3 · Fidelização</option>
                       </select>
                     </div>
                   </div>
@@ -2425,13 +2564,15 @@
       const abrir = (id) => { setRoteiroId(id); setTela('roteiro'); window.scrollTo(0, 0); };
       const estrategia = useDoc(`clientes/${cliente.id}/estrategia/atual`);
       const foco = useDoc(`clientes/${cliente.id}/focos/${mesReferencia()}`);
+      const contagem = useContagemDoMes(cliente.id);
+      const mix = mixDoCliente(foco?.objetivoPerfil, cliente);
 
       if (dna === undefined) return <Carregando />;
       const falta = faltandoNoDna(dna);
       if (!dna?.onboardingConcluido) return <Onboarding uid={cliente.id} cliente={cliente} dna={dna} />;
       if (tela === 'perfil') return <MeuPerfil uid={cliente.id} dna={dna} onVoltar={() => setTela('inicio')} />;
-      if (tela === 'foco') return <FormFoco uid={cliente.id} produtos={limparProdutos(dna?.produtos)} quem="cliente" onVoltar={() => setTela('inicio')} />;
-      if (tela === 'criar' && !falta.length) return <CriarRoteiro dna={dna} estrategia={estrategia} onPronto={abrir} onVoltar={() => setTela('inicio')} />;
+      if (tela === 'foco') return <FormFoco uid={cliente.id} produtos={limparProdutos(dna?.produtos)} quem="cliente" cliente={cliente} onVoltar={() => setTela('inicio')} />;
+      if (tela === 'criar' && !falta.length) return <CriarRoteiro dna={dna} estrategia={estrategia} mix={mix} contagem={contagem} objetivoPerfil={foco?.objetivoPerfil} onPronto={abrir} onVoltar={() => setTela('inicio')} />;
       if (tela === 'roteiro') return <VerRoteiro uid={cliente.id} id={roteiroId} onVoltar={() => setTela('inicio')} onAbrir={abrir} />;
 
       return (
@@ -2461,7 +2602,7 @@
                 </div>
               </div>
             </div>
-            <CartaoFoco foco={foco} onEditar={() => setTela('foco')} />
+            <CartaoFoco foco={foco} mix={mix} contagem={contagem} onEditar={() => setTela('foco')} />
             <RoteirosRecentes uid={cliente.id} onAbrir={abrir} />
             <LembreteMarca estrategia={estrategia} />
             <GuiaDeTeste crescimento={cliente.crescimento} />

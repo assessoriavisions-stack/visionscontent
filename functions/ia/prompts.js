@@ -148,6 +148,8 @@ function campanhaVigente(foco, hojeISO = new Date().toISOString().slice(0, 10)) 
 function blocoFoco(foco, pilar) {
   if (!foco) return 'FOCO DO MÊS\nAinda não definido. Use o DNA e os produtos.';
   const l = ['FOCO DO MÊS'];
+  const obj = cat.OBJETIVOS_PERFIL[foco.objetivoPerfil];
+  if (obj) l.push(`Objetivo do perfil neste mês: ${obj.nome} (${obj.descricao.toLowerCase()}).`);
   if (foco.produtoFoco) l.push(`Produto em destaque: ${foco.produtoFoco}`);
   if (foco.objetivo) l.push(`Objetivo do mês: ${foco.objetivo}`);
   const c = campanhaVigente(foco);

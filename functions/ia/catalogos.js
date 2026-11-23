@@ -11,7 +11,7 @@ const FORMATOS = {
 };
 
 const PILARES = {
-  P1: { nome: 'P1 · Demanda', objetivo: 'Gerar demanda e alcançar quem não conhece', kpi: 'Compartilhamento', estilos: ['analise', 'pauta_quente', 'cultura_pop'] },
+  P1: { nome: 'P1 · Atração', objetivo: 'Atrair quem ainda não conhece e aumentar a base', kpi: 'Compartilhamento', estilos: ['analise', 'pauta_quente', 'cultura_pop'] },
   P2: { nome: 'P2 · Venda', objetivo: 'Venda', kpi: 'Conversão (direct, link, mensagem)', estilos: ['historia', 'prova_social', 'tecnico', 'transformacao'] },
   P3: { nome: 'P3 · Fidelização', objetivo: 'Fidelização', kpi: 'Comentários, curtidas e salvamentos', estilos: ['noticia', 'analise', 'desejo', 'opiniao'] },
 };
@@ -93,6 +93,19 @@ const REGRAS_TESTE = [
   'Quem posta com constância reaproveita o que funcionou a cada 3 meses, com gancho novo.',
 ];
 
+
+// Objetivo do perfil (escolhido no foco do mês) e a mistura de pilares que ele pede.
+// O admin pode personalizar as porcentagens por cliente (clientes/{uid}.mixPersonalizado).
+const OBJETIVOS_PERFIL = {
+  crescer: { nome: 'Crescer o perfil', descricao: 'Alcançar gente nova e ganhar seguidores', mix: { P1: 60, P2: 15, P3: 25 } },
+  autoridade: { nome: 'Aumentar a autoridade', descricao: 'Ser lembrada como referência no assunto', mix: { P1: 30, P2: 20, P3: 50 } },
+  vender: { nome: 'Vender com o perfil', descricao: 'Transformar seguidores em clientes', mix: { P1: 25, P2: 50, P3: 25 } },
+};
+
+function mixDoCliente(objetivo, cliente) {
+  if (!OBJETIVOS_PERFIL[objetivo]) return null;
+  return cliente?.mixPersonalizado?.[objetivo] || OBJETIVOS_PERFIL[objetivo].mix;
+}
 
 // ---------- Fase 3: geração ----------
 
@@ -176,6 +189,8 @@ const DURACAO_ALVO_CORTE_SEG = 70;
 const MAX_PARTES_SERIE = 10;
 
 module.exports = {
+  OBJETIVOS_PERFIL,
+  mixDoCliente,
   PAPEL_FORMATO,
   ESTILOS_POR_FORMATO,
   FORMATOS_STORY,

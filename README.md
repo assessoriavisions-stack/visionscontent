@@ -113,6 +113,10 @@ e do cabeçalho. Logo em `assets/logo-visions.png`.
 - **Foco do mês** (`clientes/{uid}/focos/AAAA-MM`): produto em destaque, objetivo e campanha ativa
   com mecânica, regras, datas, como participar e CTA. Não bloqueia: sem foco a tela inicial lembra.
   Vem pré-preenchido com o mês anterior. Campanha passada da data de fim sai dos roteiros sozinha.
+- **Objetivo do perfil** (no foco do mês): crescer o perfil (P1 60% · P2 15% · P3 25%), aumentar a
+  autoridade (30 · 20 · 50) ou vender com o perfil (25 · 50 · 25). O admin ajusta as porcentagens por
+  cliente (`clientes/{uid}.mixPersonalizado`). A tela inicial mostra a mistura do mês (meta x feito) e
+  o passo do pilar sugere o pilar que mais está faltando.
 - No prompt, a parte fixa do cliente (perfil, voz, produtos, estratégia, plano) vai em cache entre
   gerações; o foco do mês e as escolhas do conteúdo vão na parte variável.
 

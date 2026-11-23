@@ -95,6 +95,22 @@ test('estratégia, produtos e foco do mês', async (t) => {
     assert.doesNotMatch(r.conteudo.bigIdea, /Campanha/);
   });
 
+  await t.test('objetivo do perfil no foco e mistura personalizada pelo admin', async () => {
+    await negado(setDoc(doc(C.db, 'clientes', u.uid, 'focos', MES), { objetivoPerfil: 'viralizar' }, { merge: true }));
+    await setDoc(doc(C.db, 'clientes', u.uid, 'focos', MES), { objetivoPerfil: 'vender' }, { merge: true });
+    await negado(A.chamar('adminAtualizarCliente', { uid: u.uid, mixPersonalizado: { vender: { P1: 50, P2: 50, P3: 10 } } }), 'invalid-argument');
+    await negado(A.chamar('adminAtualizarCliente', { uid: u.uid, mixPersonalizado: { sumir: { P1: 50, P2: 50, P3: 0 } } }), 'invalid-argument');
+    await A.chamar('adminAtualizarCliente', { uid: u.uid, mixPersonalizado: { vender: { P1: 20, P2: 60, P3: 20 }, crescer: null } });
+    const cli = (await getDoc(doc(C.db, 'clientes', u.uid))).data();
+    assert.deepEqual(cli.mixPersonalizado, { vender: { P1: 20, P2: 60, P3: 20 } });
+    // Cliente não mexe na mistura.
+    const { updateDoc } = require('firebase/firestore');
+    await negado(updateDoc(doc(C.db, 'clientes', u.uid), { mixPersonalizado: { vender: { P1: 0, P2: 100, P3: 0 } } }));
+    // Tudo no padrão: limpa.
+    await A.chamar('adminAtualizarCliente', { uid: u.uid, mixPersonalizado: { vender: null } });
+    assert.equal((await getDoc(doc(C.db, 'clientes', u.uid))).data().mixPersonalizado, null);
+  });
+
   await t.test('cliente bloqueado não lê estratégia nem foco', async () => {
     await adb.doc(`clientes/${u.uid}`).update({ status: 'bloqueado' });
     await negado(getDoc(doc(C.db, 'clientes', u.uid, 'estrategia', 'atual')));
