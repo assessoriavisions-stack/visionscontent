@@ -9,6 +9,7 @@ const trava = require('./ia/travaAntiIA');
 const cat = require('./ia/catalogos');
 const { exigirDnaCompleto } = require('./dna');
 const { carregarEstrategiaEFoco } = require('./estrategia');
+const { contextoDaCampanha, atualizarPostDaCampanha } = require('./campanhas');
 
 const OPCOES_IA = { secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 540, memory: '512MiB' };
 const MAX_VERSOES = 10;
@@ -220,13 +221,18 @@ exports.gerarRoteiro = callableCliente(async ({ data }, { uid, cliente }) => {
     if (escolhas.formato === 'serie') contextoSerie = 'Esta é a parte 1. Defina o nome da série e quantas partes ela terá. Termine puxando a parte 2.';
   }
 
+  // Post do cronograma de uma campanha: o contexto da campanha entra no prompt.
+  const campanhaId = !data.continuarSerie && typeof data.campanhaId === 'string' && data.campanhaId ? data.campanhaId : null;
+  const campanhaOrdem = campanhaId ? Number(data.campanhaOrdem) : null;
+  const ctxCampanha = campanhaId ? await contextoDaCampanha(uid, campanhaId, campanhaOrdem) : null;
+
   const [padroes, recentes, aprendizados, ctxEstr] = await Promise.all([
     trava.carregarPadroes(db, dna.palavrasProibidas),
     carregarRecentes(uid),
     carregarAprendizados(uid, escolhas, cliente),
     carregarEstrategiaEFoco(uid),
   ]);
-  const prompt = montarPromptRoteiro({ dna, escolhas, padroes, aprendizados, ganchosRecentes: recentes.ganchos, campanha: null, serie: contextoSerie, estrategia: ctxEstr.estrategia, foco: ctxEstr.foco });
+  const prompt = montarPromptRoteiro({ dna, escolhas, padroes, aprendizados, ganchosRecentes: recentes.ganchos, campanha: ctxCampanha?.campanha || null, serie: contextoSerie, estrategia: ctxEstr.estrategia, foco: ctxEstr.foco });
 
   const r = await gerarComDuracao({
     escolhas, prompt, padroes,
@@ -249,7 +255,8 @@ exports.gerarRoteiro = callableCliente(async ({ data }, { uid, cliente }) => {
     duracaoEstimadaSeg: duracaoEstimadaSeg(conteudo),
     avisos,
     trava: r.trava,
-    campanhaId: data.campanhaId || null,
+    campanhaId,
+    campanhaOrdem,
     focoMes: ctxEstr.foco ? require('./lib/tempo').mesReferencia() : null,
     serieId,
     parteSerie,
@@ -259,6 +266,7 @@ exports.gerarRoteiro = callableCliente(async ({ data }, { uid, cliente }) => {
     atualizadoEm: FieldValue.serverTimestamp(),
   });
   await registrarGeracao(uid);
+  if (campanhaId) await atualizarPostDaCampanha(uid, campanhaId, (p) => p.ordem === campanhaOrdem, { roteiroId: ref.id, status: 'roteiro' });
   return { id: ref.id };
 }, { ...OPCOES_IA, consomeGeracao: true });
 

@@ -374,6 +374,33 @@
     .icone-app { width: 48px; height: 48px; border-radius: 12px; flex: none; box-shadow: var(--sombra-leve); }
     .passos-curtos li { padding-top: 10px; padding-bottom: 10px; font-size: 14px; }
 
+    /* Fase 7 */
+    .abas { display: inline-flex; background: var(--superficie); border: 1px solid var(--linha); border-radius: 12px; padding: 3px; align-self: flex-start; }
+    .abas button { border: 0; background: transparent; padding: 8px 16px; border-radius: 9px; cursor: pointer; font-weight: 500; color: var(--tinta-2); }
+    .abas button.ativa { background: var(--tinta); color: var(--marfim); }
+    .marcador { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 8px; vertical-align: 2px; }
+    .fase-aquecimento { --cor-fase: var(--azul); --cor-fase-clara: var(--azul-claro); }
+    .fase-conversao { --cor-fase: var(--vermelho); --cor-fase-clara: var(--vermelho-claro); }
+    .fase-ultima_chamada { --cor-fase: #B07A00; --cor-fase-clara: var(--amarelo-claro); }
+    .marcador { background: var(--cor-fase); }
+    .post-campanha { border-left: 4px solid var(--cor-fase); }
+    .data-post { display: flex; flex-direction: column; gap: 2px; margin: 0; }
+    .data-post input { min-height: 38px; padding: 6px 10px; width: auto; }
+    .calendario { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .cal-cab { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--suave); text-align: center; padding: 4px 0; }
+    .cal-dia { min-height: 74px; border-radius: 8px; background: var(--superficie-2); padding: 4px; display: flex; flex-direction: column; gap: 3px; opacity: .55; overflow: hidden; }
+    .cal-dia.dentro { opacity: 1; background: var(--superficie); border: 1px solid var(--linha-2); }
+    .cal-dia.limite { border-color: var(--vermelho); }
+    .cal-dia.alvo.dentro { cursor: pointer; outline: 2px dashed #C9D6EE; }
+    .cal-dia.vazio { background: transparent; }
+    .cal-num { font-size: 11px; color: var(--suave); }
+    .cal-post { border: 0; border-left: 3px solid var(--cor-fase); background: var(--cor-fase-clara); border-radius: 5px; font-size: 10.5px; padding: 3px 4px; text-align: left; cursor: grab; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--tinta); }
+    .cal-post.selecionado { outline: 2px solid var(--tinta); }
+    .cal-formato { display: none; }
+    @media (min-width: 720px) { .cal-dia { min-height: 96px; } .cal-post { font-size: 12px; } .cal-formato { display: inline; } }
+    .legenda-fases { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--suave); }
+    .legenda-fases span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--cor-fase); margin-right: 6px; vertical-align: -1px; }
+
     /* Fase de crescimento */
     .selo.testes { background: var(--azul-claro); color: var(--azul); }
     .selo.vencedor { background: var(--amarelo-claro); color: #8A6400; }
@@ -1683,9 +1710,9 @@
       );
     }
 
-    function CriarRoteiro({ dna, estrategia, mix, contagem, objetivoPerfil, onPronto, onVoltar }) {
-      const [e, setE] = useState({});
-      const [passo, setPasso] = useState('formato');
+    function CriarRoteiro({ dna, estrategia, mix, contagem, objetivoPerfil, inicial, campanha, onPronto, onVoltar }) {
+      const [e, setE] = useState(inicial || {});
+      const [passo, setPasso] = useState(inicial ? 'revisar' : 'formato');
       const [temas, setTemas] = useState(null);
       const [buscandoTemas, setBuscandoTemas] = useState(false);
       const [gerando, setGerando] = useState(false);
@@ -1757,7 +1784,7 @@
         const t1 = setTimeout(() => setEtapaGeracao('Conferindo o texto...'), 25000);
         const t2 = setTimeout(() => setEtapaGeracao('Ajustando os últimos detalhes...'), 60000);
         try {
-          const r = await chamar('gerarRoteiro', { ...e, formatoVisual: temVisual ? e.formatoVisual : null, estiloLegenda: ehStory ? null : e.estiloLegenda }, { timeout: 540000 });
+          const r = await chamar('gerarRoteiro', { ...e, formatoVisual: temVisual ? e.formatoVisual : null, estiloLegenda: ehStory ? null : e.estiloLegenda, ...(campanha ? { campanhaId: campanha.id, campanhaOrdem: campanha.ordem } : {}) }, { timeout: 540000 });
           onPronto(r.id);
         } catch (err) {
           setErro(mensagemErro(err));
@@ -1906,7 +1933,7 @@
           </Cabecalho>
           <main className="wrap conteudo estreito stack-lg">
             <div className="stack">
-              <span className="sobretitulo">Novo roteiro · passo {idx + 1} de {passos.length}</span>
+              <span className="sobretitulo">{campanha ? `Campanha ${campanha.nome} · post ${campanha.ordem}` : `Novo roteiro · passo ${idx + 1} de ${passos.length}`}</span>
               <h1>{{ formato: 'Qual formato?', pilar: 'Qual o objetivo deste post?', estilo: 'Qual estilo de roteiro?', angulo: 'Por qual ângulo?', tema: 'Qual o tema?', framework: 'Qual estrutura?', visual: 'Como vai ser gravado?', cta: 'Como termina?', revisar: 'Tudo certo?' }[passo]}</h1>
             </div>
             {idx > 0 && passo !== 'revisar' && (
@@ -2133,6 +2160,11 @@
         if (!confirm('Excluir este roteiro? Não dá para desfazer.')) return;
         try {
           await db.doc(`clientes/${uid}/roteiros/${r.id}`).delete();
+          if (r.campanhaId) {
+            const cref = db.doc(`clientes/${uid}/campanhas/${r.campanhaId}`);
+            const cs = await cref.get().catch(() => null);
+            if (cs?.exists) await cref.update({ posts: cs.data().posts.map((p) => (p.roteiroId === r.id ? { ...p, roteiroId: null, status: 'ideia' } : p)), atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+          }
           toast('Roteiro excluído.');
           onVoltar();
         } catch (e) { toast(mensagemErro(e)); }
@@ -2623,7 +2655,7 @@
       );
     }
 
-    function CartaoFoco({ foco, onEditar, mix, contagem }) {
+    function CartaoFoco({ foco, onEditar, mix, contagem, onPlanejar }) {
       const mes = mesReferencia();
       if (foco === undefined) return null;
       if (!foco) {
@@ -2657,6 +2689,7 @@
                 <strong>{c.nome}</strong>
                 {c.oferta && <p>{c.oferta}</p>}
                 {c.mecanica && <p className="suave peq">{c.mecanica}</p>}
+                {onPlanejar && <div><button className="btn mini" style={{ marginTop: 8 }} onClick={onPlanejar}>Planejar cronograma da campanha</button></div>}
               </div>
             )}
             {mix && (
@@ -3330,6 +3363,219 @@
       );
     }
 
+    // ==========================================================
+    // Fase 7: campanhas e cronograma
+    // ==========================================================
+    const FASES_CAMPANHA = { aquecimento: 'Aquecimento', conversao: 'Conversão', ultima_chamada: 'Última chamada' };
+    const STATUS_POST_CAMPANHA = { ideia: 'Ideia', roteiro: 'Roteiro pronto', postado: 'Postado', medido: 'Medido' };
+    const ESTILO_LEGENDA_PADRAO = { P1: 'curta_provocativa', P2: 'storytelling', P3: 'pergunta' };
+    const diaSemana = (iso) => new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: 'short', timeZone: 'UTC' }).format(new Date(`${iso}T12:00:00Z`)).replace('.', '');
+
+    // Escolhas do roteiro a partir de um post do cronograma (tudo pré-preenchido).
+    function escolhasDoPost(p, dna) {
+      return {
+        formato: p.formato, pilar: p.pilar, estilo: p.estilo, angulo: p.angulo, tema: p.temaProposto,
+        framework: frameworkSugerido(p.pilar, p.estilo), cta: ctaSugerido(p.formato, p.pilar, dna?.negocio?.destinoVenda),
+        formatoVisual: ['reels', 'serie'].includes(p.formato) ? 'talking_head' : undefined,
+        estiloLegenda: FORMATOS_STORY.includes(p.formato) ? undefined : ESTILO_LEGENDA_PADRAO[p.pilar],
+      };
+    }
+
+    function NovaCampanha({ dna, estrategia, foco, onCriada, onVoltar }) {
+      const c = campanhaVigente(foco);
+      const hoje = hojeISO();
+      const [f, setF] = useState({
+        nome: c?.nome || '', objetivo: foco?.objetivo || '', oferta: c?.oferta || '', mecanica: [c?.mecanica, c?.regras].filter(Boolean).join(' '),
+        dataInicio: c?.inicio && c.inicio > hoje ? c.inicio : hoje, dataLimite: c?.fim || '', quantidadePosts: 10,
+        formatosPermitidos: estrategia?.formatosPrioritarios?.length ? estrategia.formatosPrioritarios : ['reels', 'carrossel', 'sequencia_stories'],
+      });
+      const [erro, setErro] = useState('');
+      const [gerando, setGerando] = useState(false);
+      const muda = (k) => (e) => setF({ ...f, [k]: e.target.value });
+      async function gerar() {
+        setErro('');
+        if (!f.nome.trim() || !f.objetivo.trim() || !f.oferta.trim()) return setErro('Preencha nome, objetivo e oferta.');
+        if (!f.dataInicio || !f.dataLimite) return setErro('Escolha a data de início e a data-limite.');
+        setGerando(true);
+        try {
+          const r = await chamar('gerarCronogramaCampanha', { ...f, quantidadePosts: Number(f.quantidadePosts) }, { timeout: 300000 });
+          onCriada(r.id);
+        } catch (e) {
+          setErro(mensagemErro(e));
+          setGerando(false);
+        }
+      }
+      if (gerando) {
+        return <div className="tela-centro"><div className="cartao" style={{ width: '100%', maxWidth: 420 }}><div className="faixa" /><div className="cartao-corpo stack" style={{ textAlign: 'center' }}><span className="girando grande" style={{ margin: '8px auto' }} /><h2>Montando o cronograma...</h2><p className="suave peq">Fases, datas, formatos e um tema para cada post. Leva até 1 minuto.</p></div></div></div>;
+      }
+      return (
+        <>
+          <Cabecalho><button className="btn fantasma mini" onClick={onVoltar}>Cancelar</button></Cabecalho>
+          <main className="wrap conteudo estreito stack-lg">
+            <div className="stack">
+              <span className="sobretitulo">Nova campanha</span>
+              <h1>Planejar uma campanha</h1>
+              <p className="suave">A plataforma divide o período em aquecimento, conversão e última chamada, distribui os posts e sugere um tema para cada um. Depois você cria cada roteiro com um toque.</p>
+              {c && <div className="aviso">Trouxe a campanha "{c.nome}" do seu foco do mês. Confira as datas.</div>}
+            </div>
+            <section className="cartao"><div className="cartao-corpo stack">
+              <div><label htmlFor="cp-nome">Nome da campanha</label><input id="cp-nome" placeholder="Ex.: Dia dos Namorados" value={f.nome} onChange={muda('nome')} /></div>
+              <div><label htmlFor="cp-obj">Objetivo</label><textarea id="cp-obj" rows="2" placeholder="Ex.: vender 40 kits até o dia 12" value={f.objetivo} onChange={muda('objetivo')} /></div>
+              <div><label htmlFor="cp-oferta">Oferta</label><input id="cp-oferta" placeholder="Ex.: kit casal com cartão escrito à mão" value={f.oferta} onChange={muda('oferta')} /></div>
+              <div><label htmlFor="cp-mec">Mecânica e regras <span className="suave">(opcional)</span></label><textarea id="cp-mec" rows="3" placeholder="Ex.: quem fechar até dia 5 ganha entrega grátis" value={f.mecanica} onChange={muda('mecanica')} /></div>
+              <div className="duas">
+                <div><label htmlFor="cp-ini">Começa em</label><input id="cp-ini" type="date" value={f.dataInicio} onChange={muda('dataInicio')} /></div>
+                <div><label htmlFor="cp-fim">Data-limite</label><input id="cp-fim" type="date" value={f.dataLimite} onChange={muda('dataLimite')} /></div>
+              </div>
+              <div><label htmlFor="cp-qtd">Quantos posts</label><input id="cp-qtd" type="number" min="3" max="40" inputMode="numeric" value={f.quantidadePosts} onChange={muda('quantidadePosts')} /><p className="dica">Entre 3 e 40. Conte stories como 1 post por sequência.</p></div>
+              <div>
+                <label>Formatos que você vai usar</label>
+                <div className="chips">{Object.entries(FORMATOS).map(([id, nome]) => { const on = f.formatosPermitidos.includes(id); return <button type="button" key={id} className={'chip-escolha' + (on ? ' ativo' : '')} aria-pressed={on} onClick={() => setF({ ...f, formatosPermitidos: on ? f.formatosPermitidos.filter((x) => x !== id) : [...f.formatosPermitidos, id] })}>{nome}</button>; })}</div>
+              </div>
+            </div></section>
+            {erro && <div className="erro" role="alert">{erro}</div>}
+            <div className="barra-acoes"><button className="btn" onClick={onVoltar}>Cancelar</button><button className="btn primario" onClick={gerar}>Montar cronograma</button></div>
+          </main>
+        </>
+      );
+    }
+
+    function CalendarioCampanha({ c, selecionado, setSelecionado, moverPara, onAbrirPost }) {
+      const meses = [];
+      const ini = new Date(`${c.dataInicio.slice(0, 7)}-01T12:00:00Z`);
+      const fim = new Date(`${c.dataLimite.slice(0, 7)}-01T12:00:00Z`);
+      for (let d = new Date(ini); d <= fim; d.setUTCMonth(d.getUTCMonth() + 1)) meses.push(new Date(d));
+      const [idx, setIdx] = useState(0);
+      const mes = meses[Math.min(idx, meses.length - 1)];
+      const ano = mes.getUTCFullYear(); const m = mes.getUTCMonth();
+      const primeiroDia = (new Date(Date.UTC(ano, m, 1)).getUTCDay() + 6) % 7; // segunda = 0
+      const diasNoMes = new Date(Date.UTC(ano, m + 1, 0)).getUTCDate();
+      const celulas = [...Array(primeiroDia).fill(null), ...Array.from({ length: diasNoMes }, (_, i) => `${ano}-${String(m + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`)];
+      const nomeMesBruto = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(mes);
+      const nomeMes = nomeMesBruto.charAt(0).toUpperCase() + nomeMesBruto.slice(1);
+      return (
+        <section className="cartao"><div className="cartao-corpo stack">
+          <div className="entre">
+            <button className="btn mini fantasma" disabled={idx === 0} onClick={() => setIdx(idx - 1)} aria-label="Mês anterior">‹</button>
+            <strong>{nomeMes}</strong>
+            <button className="btn mini fantasma" disabled={idx >= meses.length - 1} onClick={() => setIdx(idx + 1)} aria-label="Próximo mês">›</button>
+          </div>
+          {selecionado && <div className="aviso peq">Toque no dia para onde quer levar o post {selecionado}, ou toque nele de novo para cancelar.</div>}
+          <div className="calendario">
+            {['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'].map((d) => <div key={d} className="cal-cab">{d}</div>)}
+            {celulas.map((dia, i) => {
+              if (!dia) return <div key={`v${i}`} className="cal-dia vazio" />;
+              const dentro = dia >= c.dataInicio && dia <= c.dataLimite;
+              const posts = c.posts.filter((p) => p.data === dia);
+              return (
+                <div key={dia} className={'cal-dia' + (dentro ? ' dentro' : '') + (dia === c.dataLimite ? ' limite' : '') + (selecionado ? ' alvo' : '')}
+                  onClick={() => selecionado && moverPara(selecionado, dia)}
+                  onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); moverPara(Number(e.dataTransfer.getData('text/plain')), dia); }}>
+                  <span className="cal-num">{Number(dia.slice(8))}</span>
+                  {posts.map((p) => (
+                    <button type="button" key={p.ordem} draggable className={`cal-post fase-${p.fase}` + (selecionado === p.ordem ? ' selecionado' : '')}
+                      onDragStart={(e) => e.dataTransfer.setData('text/plain', String(p.ordem))}
+                      onClick={(e) => { e.stopPropagation(); setSelecionado(selecionado === p.ordem ? null : p.ordem); }}
+                      onDoubleClick={() => onAbrirPost(p)} title={p.temaProposto}>
+                      {p.ordem}<span className="cal-formato"> · {FORMATOS[p.formato]}</span>
+                    </button>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+          <div className="legenda-fases">{Object.entries(FASES_CAMPANHA).map(([k, v]) => <span key={k} className={`fase-${k}`}>{v}</span>)}</div>
+        </div></section>
+      );
+    }
+
+    function VerCampanha({ uid, campanhaId, onVoltar, onCriarRoteiro, onAbrirRoteiro }) {
+      const c = useDoc(`clientes/${uid}/campanhas/${campanhaId}`);
+      const [modo, setModo] = useState('lista');
+      const [selecionado, setSelecionado] = useState(null);
+      if (c === undefined) return <Carregando />;
+      if (c === null) return <div className="tela-centro"><button className="btn" onClick={onVoltar}>Voltar</button></div>;
+
+      async function moverPara(ordem, dia) {
+        setSelecionado(null);
+        const posts = c.posts.map((p) => (p.ordem === ordem ? { ...p, data: dia } : p));
+        try {
+          await db.doc(`clientes/${uid}/campanhas/${campanhaId}`).update({ posts, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() });
+          toast(`Post ${ordem} movido para ${dataBR(dia)}.`);
+        } catch (e) { toast(mensagemErro(e)); }
+      }
+      const feitos = c.posts.filter((p) => p.status !== 'ideia').length;
+      const abrirPost = (p) => (p.roteiroId ? onAbrirRoteiro(p.roteiroId) : onCriarRoteiro(c, p));
+      return (
+        <>
+          <Cabecalho><button className="btn fantasma mini" onClick={onVoltar}>Voltar</button></Cabecalho>
+          <main className="wrap conteudo stack-lg">
+            <div className="stack">
+              <span className="sobretitulo">Campanha · {dataBR(c.dataInicio)} a {dataBR(c.dataLimite)}</span>
+              <h1>{c.nome}</h1>
+              <p className="suave">{c.objetivo} · Oferta: {c.oferta}</p>
+              <div className="uso"><div className="entre peq"><span className="suave">Roteiros criados</span><span className="num">{feitos} de {c.posts.length}</span></div><div className="barra"><i style={{ width: `${(feitos / c.posts.length) * 100}%` }} /></div></div>
+              <div className="abas" role="tablist">
+                <button role="tab" aria-selected={modo === 'lista'} className={modo === 'lista' ? 'ativa' : ''} onClick={() => setModo('lista')}>Lista</button>
+                <button role="tab" aria-selected={modo === 'calendario'} className={modo === 'calendario' ? 'ativa' : ''} onClick={() => setModo('calendario')}>Calendário</button>
+              </div>
+            </div>
+            {modo === 'calendario' && <CalendarioCampanha c={c} selecionado={selecionado} setSelecionado={setSelecionado} moverPara={moverPara} onAbrirPost={abrirPost} />}
+            {modo === 'lista' && (c.fases || []).map((f) => (
+              <section className="stack" key={f.id}>
+                <div className="entre"><h2><span className={`marcador fase-${f.id}`} />{f.nome}</h2><span className="suave peq">{dataBR(f.inicio)} a {dataBR(f.fim)}</span></div>
+                {c.posts.filter((p) => p.fase === f.id).sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : a.ordem - b.ordem)).map((p) => (
+                  <article className={`cartao post-campanha fase-${p.fase}`} key={p.ordem}>
+                    <div className="cartao-corpo stack">
+                      <div className="entre">
+                        <span className="sobretitulo">{p.ordem} · {FORMATOS[p.formato]} · {PILARES[p.pilar].nome} · {ESTILOS[p.estilo]} · {ANGULOS[p.angulo]}</span>
+                        <span className={'selo ' + (p.status === 'ideia' ? 'testes' : p.status === 'roteiro' ? 'ativo' : 'vencedor')}>{STATUS_POST_CAMPANHA[p.status]}</span>
+                      </div>
+                      <h3><TextoMarcado texto={p.temaProposto} campo={`posts.${c.posts.indexOf(p)}.temaProposto`} pendentes={c.pendentes} /></h3>
+                      <p className="suave peq"><TextoMarcado texto={p.porQue} campo={`posts.${c.posts.indexOf(p)}.porQue`} pendentes={c.pendentes} /></p>
+                      <div className="entre">
+                        <label className="data-post"><span className="peq suave">{diaSemana(p.data)}</span>
+                          <input type="date" value={p.data} min={c.dataInicio} max={c.dataLimite} onChange={(e) => e.target.value && moverPara(p.ordem, e.target.value)} aria-label={`Data do post ${p.ordem}`} />
+                        </label>
+                        <button className={'btn mini ' + (p.roteiroId ? '' : 'primario')} onClick={() => abrirPost(p)}>{p.roteiroId ? 'Ver roteiro' : 'Criar roteiro'}</button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </section>
+            ))}
+          </main>
+        </>
+      );
+    }
+
+    function ListaCampanhas({ uid, onAbrir, onNova }) {
+      const [lista, setLista] = useState(null);
+      useEffect(() => db.collection(`clientes/${uid}/campanhas`).orderBy('dataLimite', 'desc').limit(6).onSnapshot(
+        (s) => setLista(s.docs.map((d) => ({ id: d.id, ...d.data() }))), () => setLista([])
+      ), [uid]);
+      if (lista === null) return null;
+      const hoje = hojeISO();
+      return (
+        <section className="stack">
+          <div className="entre"><h2>Campanhas</h2><button className="btn mini" onClick={onNova}>Nova campanha</button></div>
+          {!lista.length && <p className="suave peq">Planeje uma data especial ou um lançamento: a plataforma monta o cronograma e sugere um tema para cada post.</p>}
+          <div className="lista-roteiros">
+            {lista.map((c) => {
+              const feitos = c.posts.filter((p) => p.status !== 'ideia').length;
+              return (
+                <button type="button" key={c.id} className="item-roteiro" onClick={() => onAbrir(c.id)}>
+                  <span className="sobretitulo">{c.dataLimite >= hoje ? 'Em andamento' : 'Encerrada'} · até {dataBR(c.dataLimite)}</span>
+                  <strong>{c.nome}</strong>
+                  <span className="suave peq">{feitos} de {c.posts.length} roteiros criados</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      );
+    }
+
     function InicioCliente({ cliente }) {
       const dna = useDna(cliente.id);
       const postDaUrl = new URLSearchParams(location.search).get('post');
@@ -3337,6 +3583,8 @@
       const [roteiroId, setRoteiroId] = useState(null);
       const abrir = (id) => { setRoteiroId(id); setTela('roteiro'); window.scrollTo(0, 0); };
       const [postId, setPostId] = useState(postDaUrl);
+      const [campanhaId, setCampanhaId] = useState(null);
+      const [criarDe, setCriarDe] = useState(null); // { inicial, campanha }
       useEffect(() => { if (postDaUrl) history.replaceState(null, '', location.pathname); }, []);
       const abrirPost = (id) => { setPostId(id); setTela('post'); window.scrollTo(0, 0); };
       const estrategia = useDoc(`clientes/${cliente.id}/estrategia/atual`);
@@ -3350,6 +3598,10 @@
       if (tela === 'perfil') return <MeuPerfil uid={cliente.id} dna={dna} onVoltar={() => setTela('inicio')} />;
       if (tela === 'foco') return <FormFoco uid={cliente.id} produtos={limparProdutos(dna?.produtos)} quem="cliente" cliente={cliente} onVoltar={() => setTela('inicio')} />;
       if (tela === 'criar' && !falta.length) return <CriarRoteiro dna={dna} estrategia={estrategia} mix={mix} contagem={contagem} objetivoPerfil={foco?.objetivoPerfil} onPronto={abrir} onVoltar={() => setTela('inicio')} />;
+      if (tela === 'criar-campanha-post' && !falta.length) return <CriarRoteiro dna={dna} estrategia={estrategia} mix={mix} contagem={contagem} objetivoPerfil={foco?.objetivoPerfil} inicial={criarDe.inicial} campanha={criarDe.campanha} onPronto={abrir} onVoltar={() => setTela('campanha')} />;
+      if (tela === 'nova-campanha') return <NovaCampanha dna={dna} estrategia={estrategia} foco={foco} onCriada={(id) => { setCampanhaId(id); setTela('campanha'); }} onVoltar={() => setTela('inicio')} />;
+      if (tela === 'campanha') return <VerCampanha uid={cliente.id} campanhaId={campanhaId} onVoltar={() => setTela('inicio')} onAbrirRoteiro={abrir}
+        onCriarRoteiro={(c, p) => { if (falta.length) return toast('Complete seu perfil antes de criar roteiros.'); setCriarDe({ inicial: escolhasDoPost(p, dna), campanha: { id: campanhaId, ordem: p.ordem, nome: c.nome } }); setTela('criar-campanha-post'); window.scrollTo(0, 0); }} />;
       if (tela === 'biblioteca') return <MeusRoteiros uid={cliente.id} onAbrir={abrir} onVoltar={() => setTela('inicio')} />;
       if (tela === 'roteiro') return <VerRoteiro uid={cliente.id} id={roteiroId} onVoltar={() => setTela('inicio')} onAbrir={abrir} onAbrirPost={abrirPost} />;
       if (tela === 'post') return <VerPost uid={cliente.id} postId={postId} onVoltar={() => setTela('inicio')} onAbrirRoteiro={abrir} />;
@@ -3384,8 +3636,9 @@
             </div>
             <PainelResultados uid={cliente.id} onAbrirPost={abrirPost} />
             <CartaoApp uid={cliente.id} />
-            <CartaoFoco foco={foco} mix={mix} contagem={contagem} onEditar={() => setTela('foco')} />
+            <CartaoFoco foco={foco} mix={mix} contagem={contagem} onEditar={() => setTela('foco')} onPlanejar={() => setTela('nova-campanha')} />
             <RoteirosRecentes uid={cliente.id} onAbrir={abrir} onVerTodos={() => setTela('biblioteca')} />
+            <ListaCampanhas uid={cliente.id} onAbrir={(id) => { setCampanhaId(id); setTela('campanha'); }} onNova={() => setTela('nova-campanha')} />
             <LembreteMarca estrategia={estrategia} />
             <GuiaDeTeste crescimento={cliente.crescimento} />
           </main>

@@ -121,8 +121,9 @@ service cloud.firestore {
       match /campanhas/{id} {
         allow read: if podeAcessar(uid);
         allow create: if false;
-        // Reorganizar datas no calendário.
-        allow update: if podeAcessar(uid) && naoMexeEm(['criadoEm']);
+        // Reorganizar datas no calendário (e desligar um roteiro excluído): só a lista de posts.
+        allow update: if podeAcessar(uid) && mudou().hasOnly(['posts', 'atualizadoEm'])
+          && request.resource.data.posts.size() == resource.data.posts.size();
         allow delete: if podeAcessar(uid);
       }
 

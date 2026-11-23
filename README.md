@@ -12,7 +12,7 @@ Frontend em um único `index.html` (React + Babel via CDN, no Netlify) e backend
 - [x] Fase 4: editor
 - [x] Fase 5: postado, métricas e diagnóstico
 - [x] Fase 6: lembretes (PWA + push)
-- [ ] Fase 7: campanhas
+- [x] Fase 7: campanhas
 - [ ] Fase 8: admin avançado
 
 ## Estrutura
@@ -157,6 +157,19 @@ e do cabeçalho. Logo em `assets/logo-visions.png`.
 - `enviarLembretes` (de hora em hora): lê a fila `lembretes/`, cria a notificação no app, manda o push,
   remove tokens inválidos e marca o lembrete como enviado. Cliente bloqueado ou post já medido: sai da fila.
 - Sino com contador e central de notificações; tocar abre o post. O push abre o app direto no post.
+
+## Fase 7: campanhas
+
+- "Nova campanha": nome, objetivo, oferta, mecânica, datas, quantidade de posts e formatos. Vem
+  preenchida com a campanha do foco do mês ("Planejar cronograma da campanha").
+- `gerarCronogramaCampanha`: o código monta o esqueleto (aquecimento ~40% com P1+P3, conversão ~40% com
+  P2, última chamada ~20% com P2 colada na data-limite; datas espalhadas; nunca o mesmo formato 3 vezes
+  seguidas quando há mais de 1; ângulos alternados; estilos válidos) e a IA escreve tema e "por quê"
+  de cada post, passando pela trava. Conta 1 geração.
+- Tela da campanha: lista por fase (com troca de data) e calendário do mês (arrastar no computador;
+  no celular, tocar no post e depois no dia).
+- "Criar roteiro" abre a criação com tudo preenchido e o contexto da campanha (objetivo, oferta,
+  mecânica, fase e por quê) no prompt. Status do post acompanha: ideia, roteiro, postado, medido.
 
 ## Rodar local e testar
 

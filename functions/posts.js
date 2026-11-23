@@ -9,6 +9,7 @@ const cat = require('./ia/catalogos');
 const seed = require('./config/seedPadrao');
 const { ganchoDe } = require('./roteiros');
 const R = require('./diagnostico/regras');
+const { atualizarPostDaCampanha } = require('./campanhas');
 
 const HORA = 3600 * 1000;
 
@@ -67,6 +68,7 @@ exports.marcarPostado = callableCliente(async ({ data }, { uid }) => {
   horarios.forEach((t, i) => lote.set(db.collection('lembretes').doc(`${postRef.id}_${i}`), { uid, postId: postRef.id, indice: i, em: Timestamp.fromMillis(t), postadoEm: Timestamp.fromDate(postadoEm) }));
   lote.update(ref, { status: 'postado', postId: postRef.id, atualizadoEm: FieldValue.serverTimestamp() });
   await lote.commit();
+  await atualizarPostDaCampanha(uid, r.campanhaId, (p) => p.roteiroId === id, { status: 'postado' });
   return { postId: postRef.id };
 });
 
@@ -203,6 +205,7 @@ exports.salvarMetricas = callableCliente(async ({ data }, { uid }) => {
     texto: `O resultado de "${post.tema}" está pronto, com 3 ajustes para o próximo post.`, lida: false, criadoEm: agora,
   });
   await lote.commit();
+  if (roteiro?.campanhaId) await atualizarPostDaCampanha(uid, roteiro.campanhaId, (p) => p.roteiroId === post.roteiroId, { status: 'medido' });
   // Métrica preenchida: os lembretes pendentes desse post não precisam mais sair.
   const fila = await db.collection('lembretes').where('postId', '==', postId).get();
   if (!fila.empty) { const b = db.batch(); fila.docs.forEach((d) => b.delete(d.ref)); await b.commit(); }

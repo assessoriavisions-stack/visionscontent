@@ -35,7 +35,10 @@ exports.marcarPostado = posts.marcarPostado;
 exports.salvarMetricas = posts.salvarMetricas;
 
 // Fase 6: lembretes
-exports.enviarLembretes = require('./lembretes').enviarLembretes; // só tem efeito nos emuladores com IA_FAKE=1
+exports.enviarLembretes = require('./lembretes').enviarLembretes;
+
+// Fase 7: campanhas
+exports.gerarCronogramaCampanha = require('./campanhas').gerarCronogramaCampanha; // só tem efeito nos emuladores com IA_FAKE=1
 
 // Callable mínima usada para verificar o middleware do cliente (status ativo).
 // As próximas fases trocam isto pelas functions reais (gerarRoteiro etc.).
