@@ -500,6 +500,10 @@
         'auth/invalid-email': 'Esse e-mail não parece válido.',
         'auth/user-disabled': MSG_SUSPENSO,
         'auth/too-many-requests': 'Muitas tentativas seguidas. Espere alguns minutos e tente de novo.',
+        'auth/operation-not-allowed': 'O login por e-mail e senha está desligado no Firebase. Ative em Authentication > Método de login > E-mail/senha.',
+        'auth/unauthorized-domain': 'Este endereço do site não está autorizado no Firebase. Adicione em Authentication > Configurações > Domínios autorizados.',
+        'auth/api-key-not-valid': 'A configuração do Firebase no site está errada (apiKey). Avise o suporte.',
+        'auth/admin-restricted-operation': 'Essa ação está bloqueada no Firebase.',
         'auth/network-request-failed': 'Sem conexão com a internet. Confira sua rede e tente de novo.',
         'unavailable': 'Sem conexão com o servidor. Confira sua internet e tente de novo.',
         'deadline-exceeded': 'O servidor demorou para responder. Tente de novo.',
@@ -507,7 +511,9 @@
       if (porCodigo[codigo]) return porCodigo[codigo];
       // Erros das functions já vêm em português; o SDK acrescenta " [403]" no fim.
       if (e?.message && !/^Firebase:/.test(e.message)) return e.message.replace(/\s*\[\d{3}\]$/, '');
-      return 'Algo deu errado. Tente de novo em alguns minutos.';
+      if (/referer|referrer/i.test(e?.message || '')) return 'A chave do Firebase está bloqueando este endereço do site. Libere o domínio do Netlify nas restrições da chave de API (Google Cloud > Credenciais).';
+      // Mostra o código para facilitar o suporte.
+      return `Algo deu errado. Tente de novo em alguns minutos.${codigo ? ` (código: ${codigo})` : ''}`;
     }
 
     const ehSuspensao = (e) =>
