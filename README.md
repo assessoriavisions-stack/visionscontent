@@ -183,6 +183,12 @@ Abas no painel admin: Clientes, Trava, Relatório, Referências e Uso.
 - **Uso**: gerações por cliente nos últimos 6 meses (`clientes/{uid}.geracoesPorMes`), com destaque
   para quem bateu o limite.
 
+## Tutorial "Como usar"
+
+Tour de 9 telas que abre sozinho na primeira vez que o cliente chega à tela inicial depois do DNA
+(foco do mês, criar roteiro, 5 ganchos, editar e regerar, marcar como postado, métricas e diagnóstico,
+campanhas, app no celular). Fica disponível no botão "Como usar". O "já visto" é guardado no aparelho.
+
 ## Rodar local e testar
 
 ```bash

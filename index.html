@@ -416,6 +416,18 @@
     .linha-uso .num { text-align: right; }
     .no-limite { color: var(--vermelho); font-weight: 600; }
 
+    /* Tutorial */
+    .tutorial .modal-corpo { min-height: 430px; display: flex; flex-direction: column; }
+    .tutorial-conteudo { flex: 1; display: flex; flex-direction: column; gap: 12px; animation: sobe .25s ease-out; }
+    .tutorial-numero { width: 52px; height: 52px; border-radius: 50%; background: var(--tinta); color: var(--marfim); display: grid; place-items: center; font-family: var(--serifa); font-size: 24px; }
+    .tutorial-conteudo h2 { font-size: 26px; }
+    .tutorial-onde { align-self: flex-start; font-size: 12.5px; font-weight: 500; color: var(--azul); background: var(--azul-claro); border-radius: 999px; padding: 4px 12px; }
+    .tutorial-conteudo p { font-size: 16px; line-height: 1.6; color: var(--tinta-2); }
+    .tutorial-pontos { display: flex; gap: 6px; justify-content: center; }
+    .tutorial-pontos button { width: 8px; height: 8px; border-radius: 50%; border: 0; padding: 0; background: var(--linha); cursor: pointer; }
+    .tutorial-pontos button.feito { background: var(--tinta-2); }
+    .tutorial-pontos button.atual { background: var(--azul); width: 22px; border-radius: 99px; }
+
     /* Fase de crescimento */
     .selo.testes { background: var(--azul-claro); color: var(--azul); }
     .selo.vencedor { background: var(--amarelo-claro); color: #8A6400; }
@@ -3895,6 +3907,77 @@
       );
     }
 
+    // ==========================================================
+    // Tutorial: como usar a plataforma (abre sozinho depois do DNA)
+    // ==========================================================
+    const PASSOS_TUTORIAL = [
+      { titulo: 'Sua plataforma de roteiros', onde: 'Leva 2 minutos',
+        texto: 'Aqui você cria roteiros de Reels, carrossel, post e stories com a sua voz e a metodologia da Visions. E ela aprende com os seus resultados: quanto mais você usa, mais os roteiros acertam.' },
+      { titulo: 'Todo mês, defina o seu foco', onde: 'Tela inicial · cartão "Foco do mês"',
+        texto: 'Escolha o seu principal objetivo no mês (crescer o perfil, ganhar autoridade ou vender), o produto em destaque e a campanha, se tiver. Isso muda o assunto e a chamada dos roteiros, e define quantos posts de cada tipo você precisa fazer.' },
+      { titulo: 'Crie um roteiro', onde: 'Tela inicial · botão "Criar roteiro"',
+        texto: 'Escolha o formato, o objetivo do post, o estilo, o ângulo e o tema. Sem ideia de tema? Toque em "Sugerir temas". A plataforma mostra qual objetivo está faltando no mês para você manter a mistura certa.' },
+      { titulo: 'Teste 5 ganchos', onde: 'No roteiro · "5 ganchos para testar"',
+        texto: 'Todo roteiro vem com 5 aberturas diferentes. Grave o vídeo inteiro uma vez e depois só os 3 primeiros segundos com cada gancho. Publique as versões como Reels de teste e veja qual segura mais gente. Mude 1 coisa por vez para saber o que funcionou.' },
+      { titulo: 'Deixe com a sua cara', onde: 'No roteiro · botões "Editar" e "Regerar"',
+        texto: '"Editar" muda qualquer texto com as suas palavras. "Regerar" refaz só um bloco, e você pode pedir algo como "mais curto" ou "mais engraçado". Trecho sublinhado em vermelho soou como texto de máquina: reescreva antes de gravar. O histórico guarda as últimas 10 versões.' },
+      { titulo: 'Postou? Avise a plataforma', onde: 'No roteiro · botão "Marcar como postado"',
+        texto: 'Cole o link do post e marque quais ganchos foram ao ar. A plataforma te lembra de anotar os números: em 20 horas para stories e em 2 e 7 dias para os outros formatos.' },
+      { titulo: 'Anote os números e receba o diagnóstico', onde: 'Sino no topo ou "Posts esperando resultado"',
+        texto: 'Preencha os números do Instagram. Toque no "?" de cada campo para ver onde achar. Você recebe o que funcionou, o que travou e 3 ajustes para o próximo post. Os próximos roteiros já saem com esse aprendizado.' },
+      { titulo: 'Campanhas e datas especiais', onde: 'Tela inicial · "Campanhas" > "Nova campanha"',
+        texto: 'Para um lançamento ou uma data especial, informe a oferta, as datas e quantos posts quer fazer. A plataforma monta o cronograma com um tema para cada post, e você cria cada roteiro com um toque.' },
+      { titulo: 'Leve no celular', onde: 'Tela inicial · "Instale o app" e "Meu perfil"',
+        texto: 'Instale o app no celular e ative os lembretes. Mudou alguma coisa no seu negócio ou no seu jeito de falar? Atualize em "Meu perfil". Sempre que precisar, este guia fica no botão "Como usar".' },
+    ];
+    const chaveTutorial = (uid) => `tutorial-visto-${uid}`;
+    function tutorialJaVisto(uid) { try { return localStorage.getItem(chaveTutorial(uid)) === '1'; } catch { return false; } }
+    function marcarTutorialVisto(uid) { try { localStorage.setItem(chaveTutorial(uid), '1'); } catch { /* sem armazenamento */ } }
+
+    function Tutorial({ uid, onFechar, onCriar }) {
+      const [i, setI] = useState(0);
+      const p = PASSOS_TUTORIAL[i];
+      const ultimo = i === PASSOS_TUTORIAL.length - 1;
+      const fechar = () => { marcarTutorialVisto(uid); onFechar(); };
+      useEffect(() => {
+        const teclas = (e) => {
+          if (e.key === 'ArrowRight' && !ultimo) setI(i + 1);
+          if (e.key === 'ArrowLeft' && i > 0) setI(i - 1);
+          if (e.key === 'Escape') fechar();
+        };
+        window.addEventListener('keydown', teclas);
+        return () => window.removeEventListener('keydown', teclas);
+      }, [i]);
+      return (
+        <div className="fundo-modal" onClick={(e) => e.target === e.currentTarget && fechar()}>
+          <div className="modal tutorial" role="dialog" aria-modal="true" aria-label="Como usar a plataforma">
+            <div className="faixa" />
+            <div className="modal-corpo stack-lg">
+              <div className="entre">
+                <span className="sobretitulo">Como usar · {i + 1} de {PASSOS_TUTORIAL.length}</span>
+                <button className="btn fantasma mini" onClick={fechar}>{ultimo ? 'Fechar' : 'Pular'}</button>
+              </div>
+              <div className="tutorial-conteudo" key={i}>
+                <div className="tutorial-numero">{i + 1}</div>
+                <h2>{p.titulo}</h2>
+                <span className="tutorial-onde">{p.onde}</span>
+                <p>{p.texto}</p>
+              </div>
+              <div className="tutorial-pontos" aria-hidden="true">
+                {PASSOS_TUTORIAL.map((_, j) => <button key={j} className={j === i ? 'atual' : j < i ? 'feito' : ''} onClick={() => setI(j)} tabIndex={-1} />)}
+              </div>
+              <div className="entre">
+                {i > 0 ? <button className="btn fantasma" onClick={() => setI(i - 1)}>Voltar</button> : <span />}
+                {ultimo
+                  ? <button className="btn primario" onClick={() => { marcarTutorialVisto(uid); onCriar(); }}>Criar meu primeiro roteiro</button>
+                  : <button className="btn primario" onClick={() => setI(i + 1)}>Próximo</button>}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     function InicioCliente({ cliente }) {
       const dna = useDna(cliente.id);
       const postDaUrl = new URLSearchParams(location.search).get('post');
@@ -3903,6 +3986,7 @@
       const abrir = (id) => { setRoteiroId(id); setTela('roteiro'); window.scrollTo(0, 0); };
       const [postId, setPostId] = useState(postDaUrl);
       const [campanhaId, setCampanhaId] = useState(null);
+      const [tutorialAberto, setTutorialAberto] = useState(null); // null = decide pelo "já visto"
       const [criarDe, setCriarDe] = useState(null); // { inicial, campanha }
       useEffect(() => { if (postDaUrl) history.replaceState(null, '', location.pathname); }, []);
       const abrirPost = (id) => { setPostId(id); setTela('post'); window.scrollTo(0, 0); };
@@ -3914,6 +3998,8 @@
       if (dna === undefined) return <Carregando />;
       const falta = faltandoNoDna(dna);
       if (!dna?.onboardingConcluido) return <Onboarding uid={cliente.id} cliente={cliente} dna={dna} />;
+      // Primeira vez na tela inicial depois do DNA: o tutorial abre sozinho.
+      const mostrarTutorial = tutorialAberto ?? !tutorialJaVisto(cliente.id);
       if (tela === 'perfil') return <MeuPerfil uid={cliente.id} dna={dna} onVoltar={() => setTela('inicio')} />;
       if (tela === 'foco') return <FormFoco uid={cliente.id} produtos={limparProdutos(dna?.produtos)} quem="cliente" cliente={cliente} onVoltar={() => setTela('inicio')} />;
       if (tela === 'criar' && !falta.length) return <CriarRoteiro dna={dna} estrategia={estrategia} mix={mix} contagem={contagem} objetivoPerfil={foco?.objetivoPerfil} onPronto={abrir} onVoltar={() => setTela('inicio')} />;
@@ -3950,6 +4036,7 @@
                 <div className="linha">
                   <button className="btn primario" disabled={falta.length > 0} onClick={() => setTela('criar')} title={falta.length ? 'Complete seu perfil primeiro' : ''}>Criar roteiro</button>
                   <button className="btn" onClick={() => setTela('perfil')}>Ver meu perfil</button>
+                  <button className="btn fantasma" onClick={() => setTutorialAberto(true)}>Como usar</button>
                 </div>
               </div>
             </div>
@@ -3961,6 +4048,9 @@
             <LembreteMarca estrategia={estrategia} />
             <GuiaDeTeste crescimento={cliente.crescimento} />
           </main>
+          {tela === 'inicio' && mostrarTutorial && !falta.length && (
+            <Tutorial uid={cliente.id} onFechar={() => setTutorialAberto(false)} onCriar={() => { setTutorialAberto(false); setTela('criar'); }} />
+          )}
         </>
       );
     }
