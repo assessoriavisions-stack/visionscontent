@@ -11,7 +11,7 @@ Frontend em um único `index.html` (React + Babel via CDN, no Netlify) e backend
 - [x] Fase 3: geração + trava anti-linguagem de IA
 - [x] Fase 4: editor
 - [x] Fase 5: postado, métricas e diagnóstico
-- [ ] Fase 6: lembretes (PWA + push)
+- [x] Fase 6: lembretes (PWA + push)
 - [ ] Fase 7: campanhas
 - [ ] Fase 8: admin avançado
 
@@ -145,6 +145,18 @@ e do cabeçalho. Logo em `assets/logo-visions.png`.
 - Os diagnósticos e os melhores posts entram no prompt das próximas gerações.
 - Tela inicial: posts esperando resultado, melhor post do mês por pilar e últimos diagnósticos.
 - A mistura de pilares do mês passa a contar os posts **publicados** (não os roteiros criados).
+
+## Fase 6: lembretes
+
+- PWA: `manifest.json`, ícones em `assets/`, `sw.js` (cache do app + push; um único service worker
+  na raiz) e `firebase-messaging-sw.js` (aponta para o `sw.js`).
+- Cartão "Instale o app e ative os lembretes": Android instala com 1 toque; iPhone mostra o passo a
+  passo (Compartilhar > Adicionar à Tela de Início), porque no iOS o push só funciona com o app instalado.
+- Push pelo FCM: o token de cada aparelho vai para `clientes/{uid}.fcmTokens`. Precisa da chave pública
+  de Web Push em `VAPID_KEY` no `index.html` (Console > Cloud Messaging > Certificados push da Web).
+- `enviarLembretes` (de hora em hora): lê a fila `lembretes/`, cria a notificação no app, manda o push,
+  remove tokens inválidos e marca o lembrete como enviado. Cliente bloqueado ou post já medido: sai da fila.
+- Sino com contador e central de notificações; tocar abre o post. O push abre o app direto no post.
 
 ## Rodar local e testar
 

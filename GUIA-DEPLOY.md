@@ -93,3 +93,9 @@ read -s ANTHROPIC_API_KEY && export ANTHROPIC_API_KEY && node scripts/testeRealG
 ```
 O `read -s` espera você colar a chave (não aparece na tela) e apertar Enter. No fim aparece
 "ACEITE OK" ou "ACEITE FALHOU", e o arquivo `teste-real-resultado.json` com os roteiros completos.
+
+## 10. Lembretes por push (uma vez)
+
+No Console do Firebase: **Configurações do projeto > Cloud Messaging > Configuração da Web >
+Certificados push da Web > Gerar par de chaves**. Copie a chave pública (um texto longo) e mande para o
+Claude colocar no `index.html`. Sem ela, os lembretes continuam aparecendo no sino dentro do app.

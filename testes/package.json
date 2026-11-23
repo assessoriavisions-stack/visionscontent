@@ -3,7 +3,7 @@
   "private": true,
   "description": "Testes ponta a ponta contra os emuladores do Firebase",
   "scripts": {
-    "test": "cd .. && npx --yes firebase-tools@15 emulators:exec --only auth,firestore,functions --project visionscontent-cba52 'node --test testes/*.test.js'"
+    "test": "cd .. && npx --yes firebase-tools@15 emulators:exec --only auth,firestore,functions --project visionscontent-cba52 'node --test --test-concurrency=1 testes/*.test.js'"
   },
   "devDependencies": {
     "firebase": "^12.19.0",
