@@ -9,3 +9,4 @@ ui-debug.log*
 functions/.secret.local
 service-account*.json
 functions/teste-real-resultado.json
+dist/

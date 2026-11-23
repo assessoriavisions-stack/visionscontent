@@ -1,6 +1,8 @@
+# Publica só o site (index.html, assets e, a partir da Fase 6, os arquivos do PWA).
+# O código das Cloud Functions e os testes ficam fora do que vai para o ar.
 [build]
-  publish = "."
-  command = ""
+  publish = "dist"
+  command = "rm -rf dist && mkdir dist && cp -r index.html assets dist/ && for f in manifest.json sw.js firebase-messaging-sw.js; do [ -f $f ] && cp $f dist/ || true; done"
 
 [[headers]]
   for = "/sw.js"
@@ -11,3 +13,10 @@
   for = "/firebase-messaging-sw.js"
   [headers.values]
     Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
