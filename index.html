@@ -340,6 +340,22 @@
     .filtros-biblioteca { display: grid; gap: 10px; grid-template-columns: 1fr; }
     @media (min-width: 720px) { .filtros-biblioteca { grid-template-columns: 2fr 1fr 1fr 1fr; } }
 
+    /* Fase 5 */
+    .ajuda { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--linha); background: var(--superficie); color: var(--azul); font-size: 12px; font-weight: 600; cursor: pointer; padding: 0; vertical-align: 1px; margin-left: 4px; }
+    .ajuda-texto { display: block; margin-top: 6px; font-size: 12.5px; font-weight: 400; color: #1E4785; background: var(--azul-claro); border-radius: 8px; padding: 8px 10px; }
+    .grade-metricas { display: grid; gap: 14px; grid-template-columns: 1fr; }
+    @media (min-width: 560px) { .grade-metricas { grid-template-columns: 1fr 1fr; } }
+    .comparado { align-self: flex-start; font-size: 13px; color: var(--tinta-2); background: var(--superficie); border: 1px solid var(--linha); border-radius: 10px; padding: 5px 12px; }
+    .explicacao { font-family: var(--sans) !important; font-size: 16.5px !important; line-height: 1.55 !important; }
+    .achado { border-radius: var(--raio-sm); padding: 12px 14px; font-size: 14.5px; border: 1px solid; }
+    .achado strong { display: block; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 3px; }
+    .achado.alta { background: var(--vermelho-claro); border-color: #F4CFCB; color: #8E1F1F; }
+    .achado.media { background: var(--amarelo-claro); border-color: #F6E3A8; color: #6B4E00; }
+    .achado.ok { background: var(--verde-claro); border-color: #C9E2D3; color: #1F5C41; }
+    .esperando { border-color: #C9D6EE; }
+    .linha-post { display: flex; justify-content: space-between; align-items: center; gap: 12px; text-align: left; background: none; border: 0; border-top: 1px solid var(--linha-2); padding: 12px 0 0; cursor: pointer; width: 100%; }
+    .linha-post > span:first-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
     /* Fase de crescimento */
     .selo.testes { background: var(--azul-claro); color: var(--azul); }
     .selo.vencedor { background: var(--amarelo-claro); color: #8A6400; }
@@ -640,8 +656,8 @@
           <div className="modal" role="dialog" aria-modal="true" aria-label={titulo}>
             <div className="faixa" />
             <div className="modal-corpo stack">
-              <div className="entre" style={{ alignItems: 'flex-start' }}>
-                <div>
+              <div className="entre" style={{ alignItems: 'flex-start', flexWrap: 'nowrap' }}>
+                <div style={{ minWidth: 0 }}>
                   {sobretitulo && <span className="sobretitulo">{sobretitulo}</span>}
                   <h2 style={{ marginTop: sobretitulo ? 4 : 0 }}>{titulo}</h2>
                 </div>
@@ -1560,8 +1576,8 @@
     function useContagemDoMes(uid) {
       const [c, setC] = useState(null);
       useEffect(() => {
-        const inicio = firebase.firestore.Timestamp.fromDate(new Date(`${mesReferencia()}-01T00:00:00-03:00`));
-        return db.collection(`clientes/${uid}/roteiros`).where('criadoEm', '>=', inicio).onSnapshot((snap) => {
+        // Conta os posts PUBLICADOS no mês (marcados como postados).
+        return db.collection(`clientes/${uid}/posts`).where('mes', '==', mesReferencia()).onSnapshot((snap) => {
           const x = { P1: 0, P2: 0, P3: 0, total: 0 };
           snap.docs.forEach((d) => { const p = d.data().pilar; if (x[p] !== undefined) { x[p]++; x.total++; } });
           setC(x);
@@ -1586,7 +1602,7 @@
             const feito = contagem.total ? Math.round((contagem[p] / contagem.total) * 100) : 0;
             return (
               <div className="mistura-linha" key={p}>
-                <div className="entre peq"><span><strong>{PILARES[p].nome}</strong></span><span className="num suave">{contagem[p]} post{contagem[p] === 1 ? '' : 's'} · {feito}% de {mix[p]}%</span></div>
+                <div className="entre peq"><span><strong>{PILARES[p].nome}</strong></span><span className="num suave">{contagem[p]} postado{contagem[p] === 1 ? '' : 's'} · {feito}% de {mix[p]}%</span></div>
                 <div className="barra-dupla"><i className="meta" style={{ width: mix[p] + '%' }} /><i className="feito" style={{ width: Math.min(feito, 100) + '%' }} /></div>
               </div>
             );
@@ -1768,7 +1784,7 @@
               opcoes={Object.entries(PILARES).map(([id, p]) => ({
                 id, titulo: p.nome,
                 texto: `${PARA_QUE_SERVE[id]} Mede: ${p.kpi.toLowerCase()}.`,
-                selo: mix ? `${id === sugerido ? 'Sugerido · ' : ''}meta ${mix[id]}% do mês · feitos ${contagem?.[id] ?? 0}` : null,
+                selo: mix ? `${id === sugerido ? 'Sugerido · ' : ''}meta ${mix[id]}% do mês · postados ${contagem?.[id] ?? 0}` : null,
               }))} />
             <MisturaDoMes mix={mix} contagem={contagem} />
           </div>
@@ -2018,7 +2034,7 @@
       );
     }
 
-    function VerRoteiro({ uid, id, onVoltar, onAbrir }) {
+    function VerRoteiro({ uid, id, onVoltar, onAbrir, onAbrirPost }) {
       const [r, setR] = useState(undefined);
       const [proximaParte, setProximaParte] = useState(null);
       const [gerandoParte, setGerandoParte] = useState(false);
@@ -2027,6 +2043,7 @@
       const [salvando, setSalvando] = useState(false);
       const [ocupado, setOcupado] = useState(null); // alvo sendo regerado
       const [historico, setHistorico] = useState(false);
+      const [postando, setPostando] = useState(false);
       useEffect(() => db.doc(`clientes/${uid}/roteiros/${id}`).onSnapshot((s) => setR(s.exists ? { id: s.id, ...s.data() } : null), () => setR(null)), [uid, id]);
       useEffect(() => {
         if (!r?.serieId) return;
@@ -2279,12 +2296,15 @@
                     </button>
                   )}
                   {editavel && <button className="btn" onClick={comecarEdicao} disabled={!!ocupado}>Editar</button>}
+                  {editavel && <button className="btn" onClick={() => setPostando(true)} disabled={!!ocupado}>Marcar como postado</button>}
+                  {r.postId && <button className="btn" onClick={() => onAbrirPost(r.postId)}>{r.status === 'medido' ? 'Ver diagnóstico' : 'Preencher resultado'}</button>}
                   <button className="btn primario" onClick={() => copiarTexto(roteiroParaTexto(r), 'Roteiro copiado.')}>Copiar roteiro</button>
                 </>
               )}
             </div>
           </main>
           {historico && <Historico r={r} onRestaurar={restaurar} onFechar={() => setHistorico(false)} />}
+          {postando && <MarcarPostado r={r} onFechar={() => setPostando(false)} onPostado={() => { setPostando(false); toast('Marcado como postado. A plataforma vai te lembrar de anotar os resultados.'); }} />}
         </>
       );
     }
@@ -2823,11 +2843,335 @@
       );
     }
 
+    // ==========================================================
+    // Fase 5: postado, métricas e diagnóstico
+    // ==========================================================
+    const AJUDA = {
+      alcance: 'No post, toque em "Ver insights". É o número de "Contas alcançadas".',
+      visualizacoes: 'Nos insights do reel, "Visualizações" (ou "Reproduções").',
+      retencao3s: 'Nos insights do reel, veja a "Taxa de pulo". Retenção nos 3s = 100 menos a taxa de pulo. Ex.: taxa de pulo 60% = retenção 40.',
+      tempoMedioSeg: 'Nos insights do reel, "Tempo médio de visualização", em segundos.',
+      duracaoSeg: 'A duração do vídeo publicado, em segundos.',
+      segundoQueda: 'No gráfico de retenção dos insights, o segundo em que a linha cai mais forte. Opcional, mas ajuda muito o diagnóstico.',
+      curtidas: 'Nos insights, em "Interações": curtidas.',
+      comentarios: 'Nos insights, em "Interações": comentários.',
+      compartilhamentos: 'Nos insights, em "Interações": compartilhamentos (o ícone de avião de papel).',
+      salvamentos: 'Nos insights, em "Interações": salvamentos.',
+      seguidoresGanhos: 'Nos insights, em "Seguidores": quantos começaram a te seguir por causa deste post.',
+      visitasPerfil: 'Nos insights, em "Atividade do perfil": visitas ao perfil.',
+      mensagens: 'Quantas mensagens ou cliques no link chegaram por causa deste post. Nos insights: "Atividade do perfil" (toques em botões e links), mais as mensagens que citaram o post.',
+      leads: 'Quantas conversas de interessados chegaram por causa deste post (direct, WhatsApp, formulário).',
+      vendas: 'Quantas dessas conversas viraram venda. Opcional.',
+      frame: 'Abra o story, deslize para cima e veja os números de cada frame: contas alcançadas, avançar, sair, respostas, toques no link e votos da enquete ou respostas da caixinha.',
+      variantes: 'Para cada Reel de teste, abra os insights: visualizações e retenção nos 3s (100 menos a taxa de pulo).',
+    };
+    const NOMES_METRICA = {
+      alcance: 'Alcance', visualizacoes: 'Visualizações', retencao3s: 'Retenção nos 3s (%)', tempoMedioSeg: 'Tempo médio assistido (s)', duracaoSeg: 'Duração do vídeo (s)',
+      segundoQueda: 'Segundo em que a visualização caiu', curtidas: 'Curtidas', comentarios: 'Comentários', compartilhamentos: 'Compartilhamentos', salvamentos: 'Salvamentos',
+      seguidoresGanhos: 'Seguidores ganhos', visitasPerfil: 'Visitas ao perfil', mensagens: 'Mensagens / cliques gerados', leads: 'Conversas de interessados (leads)', vendas: 'Vendas',
+    };
+    const CAMPOS_METRICA = {
+      video: ['alcance', 'visualizacoes', 'retencao3s', 'tempoMedioSeg', 'duracaoSeg', 'segundoQueda', 'curtidas', 'comentarios', 'compartilhamentos', 'salvamentos', 'seguidoresGanhos', 'mensagens'],
+      estatico: ['alcance', 'curtidas', 'comentarios', 'compartilhamentos', 'salvamentos', 'seguidoresGanhos', 'visitasPerfil', 'mensagens'],
+    };
+    const OBRIGATORIAS = { video: ['alcance', 'retencao3s', 'tempoMedioSeg', 'duracaoSeg'], estatico: ['alcance'] };
+    const CAMPOS_FRAME = [['alcance', 'Alcance'], ['avancos', 'Avançar'], ['saidas', 'Sair'], ['respostas', 'Respostas'], ['toquesLink', 'Toques no link'], ['interacoes', 'Votos / respostas da interação']];
+    const ehVideo = (f) => f === 'reels' || f === 'serie';
+
+    function Ajuda({ texto }) {
+      const [aberta, setAberta] = useState(false);
+      return (
+        <>
+          <button type="button" className="ajuda" aria-label="Onde acho esse número?" aria-expanded={aberta} onClick={() => setAberta(!aberta)}>?</button>
+          {aberta && <span className="ajuda-texto">{texto}</span>}
+        </>
+      );
+    }
+
+    function CampoNumero({ id, nome, valor, onChange, ajuda, obrigatorio }) {
+      return (
+        <div className="campo-metrica">
+          <label htmlFor={id}>{nome}{!obrigatorio && <span className="suave"> (opcional)</span>} {ajuda && <Ajuda texto={ajuda} />}</label>
+          <input id={id} type="number" inputMode="decimal" min="0" value={valor ?? ''} onChange={(e) => onChange(e.target.value)} />
+        </div>
+      );
+    }
+
+    function MarcarPostado({ r, onFechar, onPostado }) {
+      const agoraLocal = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
+      const [link, setLink] = useState('');
+      const [quando, setQuando] = useState(agoraLocal());
+      const [testados, setTestados] = useState([1]);
+      const [erro, setErro] = useState('');
+      const [salvando, setSalvando] = useState(false);
+      const ganchos = r.conteudo?.ganchos || [];
+      const comTeste = ehVideo(r.formato) && ganchos.length > 1;
+      async function salvar() {
+        setErro('');
+        setSalvando(true);
+        try {
+          const res = await chamar('marcarPostado', { roteiroId: r.id, linkPost: link, postadoEm: new Date(quando).toISOString(), ganchosTestados: comTeste ? testados : [] });
+          onPostado(res.postId);
+        } catch (e) {
+          setErro(mensagemErro(e));
+          setSalvando(false);
+        }
+      }
+      return (
+        <Modal titulo="Marcar como postado" sobretitulo={r.tema} onFechar={onFechar}>
+          <div>
+            <label htmlFor="link-post">Link do post <span className="suave">(opcional)</span></label>
+            <input id="link-post" placeholder="https://www.instagram.com/reel/..." value={link} onChange={(e) => setLink(e.target.value)} />
+          </div>
+          <div>
+            <label htmlFor="quando">Quando foi ao ar</label>
+            <input id="quando" type="datetime-local" value={quando} onChange={(e) => setQuando(e.target.value)} />
+          </div>
+          {comTeste && (
+            <div>
+              <label>Quais ganchos você publicou como Reels de teste?</label>
+              <div className="chips">
+                {ganchos.map((g) => {
+                  const on = testados.includes(g.n);
+                  return <button type="button" key={g.n} className={'chip-escolha' + (on ? ' ativo' : '')} aria-pressed={on}
+                    onClick={() => setTestados(on ? testados.filter((x) => x !== g.n) : [...testados, g.n].sort())}>Gancho {g.n}</button>;
+                })}
+              </div>
+              <p className="dica">Marque todos os que foram ao ar. Na hora das métricas você informa os números de cada um e a plataforma aponta o vencedor.</p>
+            </div>
+          )}
+          <p className="suave peq">{['story_unico', 'sequencia_stories'].includes(r.formato) ? 'Em 20 horas a plataforma te lembra de anotar os números, antes do story sumir.' : 'A plataforma te lembra de anotar os números em 2 dias e em 7 dias.'}</p>
+          {erro && <div className="erro" role="alert">{erro}</div>}
+          <button className="btn primario cheio" onClick={salvar} disabled={salvando}>{salvando ? <><span className="girando" /> Salvando...</> : 'Confirmar'}</button>
+        </Modal>
+      );
+    }
+
+    function FormMetricas({ uid, post, onVoltar, onSalvo }) {
+      const tipo = ehVideo(post.formato) ? 'video' : 'estatico';
+      const story = ['story_unico', 'sequencia_stories'].includes(post.formato);
+      const m0 = post.metricas || {};
+      const [m, setM] = useState(() => ({
+        ...m0,
+        frames: m0.frames || Array.from({ length: post.totalFrames || 1 }, () => ({})),
+        variantes: (post.ganchosTestados || []).map((g) => ({ n: g.n, ...((m0.variantes || []).find((v) => v.n === g.n) || {}) })),
+      }));
+      const [erro, setErro] = useState('');
+      const [salvando, setSalvando] = useState(false);
+      const num = (v) => (v === '' || v === null || v === undefined ? null : Number(v));
+
+      async function salvar() {
+        setErro('');
+        if (!story) {
+          const falta = OBRIGATORIAS[tipo].filter((c) => num(m[c]) === null);
+          if (falta.length) return setErro(`Preencha: ${falta.map((c) => NOMES_METRICA[c]).join(', ')}.`);
+        } else if (num(m.frames[0]?.alcance) === null) return setErro('Preencha pelo menos o alcance do primeiro frame.');
+        setSalvando(true);
+        try {
+          const enviar = story
+            ? { frames: m.frames.map((f) => Object.fromEntries(CAMPOS_FRAME.map(([k]) => [k, num(f[k])]))), mensagens: num(m.mensagens), leads: num(m.leads), vendas: num(m.vendas) }
+            : { ...Object.fromEntries([...CAMPOS_METRICA[tipo], 'leads', 'vendas'].map((c) => [c, num(m[c])])), variantes: m.variantes.map((v) => ({ n: v.n, visualizacoes: num(v.visualizacoes), retencao3s: num(v.retencao3s) })) };
+          await chamar('salvarMetricas', { postId: post.id, metricas: enviar }, { timeout: 180000 });
+          toast('Pronto! Aqui está o seu diagnóstico.');
+          onSalvo();
+        } catch (e) {
+          setErro(mensagemErro(e));
+        }
+        setSalvando(false);
+      }
+
+      return (
+        <>
+          <Cabecalho><button className="btn fantasma mini" onClick={onVoltar}>Voltar</button></Cabecalho>
+          <main className="wrap conteudo estreito stack-lg">
+            <div className="stack">
+              <span className="sobretitulo">{FORMATOS[post.formato]} · {post.pilar}</span>
+              <h1>Como foi o post?</h1>
+              <p className="suave">"{post.tema}". Leva 1 minuto. Toque no <span className="ajuda" style={{ display: 'inline-grid' }}>?</span> para ver onde achar cada número no Instagram.</p>
+            </div>
+            {!story && (
+              <section className="cartao"><div className="cartao-corpo grade-metricas">
+                {CAMPOS_METRICA[tipo].map((c) => (
+                  <CampoNumero key={c} id={`m-${c}`} nome={NOMES_METRICA[c]} valor={m[c]} ajuda={AJUDA[c]} obrigatorio={OBRIGATORIAS[tipo].includes(c)} onChange={(v) => setM({ ...m, [c]: v })} />
+                ))}
+              </div></section>
+            )}
+            {!story && m.variantes.length >= 2 && (
+              <section className="cartao"><div className="cartao-corpo stack">
+                <div className="entre"><h2>Reels de teste</h2><Ajuda texto={AJUDA.variantes} /></div>
+                {m.variantes.map((v, i) => {
+                  const g = post.ganchosTestados.find((x) => x.n === v.n);
+                  const muda = (k) => (val) => setM({ ...m, variantes: m.variantes.map((x, j) => (j === i ? { ...x, [k]: val } : x)) });
+                  return (
+                    <div className="produto" key={v.n}>
+                      <span className="sobretitulo">Gancho {v.n}</span>
+                      <p className="peq">{g?.texto}</p>
+                      <div className="duas">
+                        <CampoNumero id={`v-${v.n}-vis`} nome="Visualizações" valor={v.visualizacoes} onChange={muda('visualizacoes')} obrigatorio />
+                        <CampoNumero id={`v-${v.n}-ret`} nome="Retenção nos 3s (%)" valor={v.retencao3s} onChange={muda('retencao3s')} obrigatorio />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div></section>
+            )}
+            {story && (
+              <section className="cartao"><div className="cartao-corpo stack">
+                <div className="entre"><h2>Números de cada frame</h2><Ajuda texto={AJUDA.frame} /></div>
+                {m.frames.map((f, i) => (
+                  <div className="produto" key={i}>
+                    <div className="entre"><span className="sobretitulo">Frame {i + 1}</span>{m.frames.length > 1 && <button type="button" className="btn texto peq" onClick={() => setM({ ...m, frames: m.frames.filter((_, j) => j !== i) })}>Remover</button>}</div>
+                    <div className="grade-metricas">
+                      {CAMPOS_FRAME.map(([k, nome]) => (
+                        <CampoNumero key={k} id={`f-${i}-${k}`} nome={nome} valor={f[k]} obrigatorio={k === 'alcance'} onChange={(v) => setM({ ...m, frames: m.frames.map((x, j) => (j === i ? { ...x, [k]: v } : x)) })} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {m.frames.length < 10 && <button type="button" className="btn" onClick={() => setM({ ...m, frames: [...m.frames, {}] })}>Adicionar frame</button>}
+                <CampoNumero id="m-msg" nome={NOMES_METRICA.mensagens} valor={m.mensagens} ajuda={AJUDA.mensagens} onChange={(v) => setM({ ...m, mensagens: v })} />
+              </div></section>
+            )}
+            {post.pilar === 'P2' && (
+              <section className="cartao"><div className="cartao-corpo stack">
+                <h2>Venda</h2>
+                <div className="duas">
+                  <CampoNumero id="m-leads" nome={NOMES_METRICA.leads} valor={m.leads} ajuda={AJUDA.leads} onChange={(v) => setM({ ...m, leads: v })} />
+                  <CampoNumero id="m-vendas" nome={NOMES_METRICA.vendas} valor={m.vendas} ajuda={AJUDA.vendas} onChange={(v) => setM({ ...m, vendas: v })} />
+                </div>
+              </div></section>
+            )}
+            {erro && <div className="erro" role="alert">{erro}</div>}
+            <div className="barra-acoes">
+              <button className="btn" onClick={onVoltar} disabled={salvando}>Cancelar</button>
+              <button className="btn primario" onClick={salvar} disabled={salvando}>{salvando ? <><span className="girando" /> Analisando o resultado...</> : 'Salvar e ver diagnóstico'}</button>
+            </div>
+          </main>
+        </>
+      );
+    }
+
+    const SEVERIDADE = { alta: 'Atenção', media: 'Observação', ok: 'Funcionou' };
+    const fmtPct = (x) => (typeof x === 'number' ? `${(x * 100).toFixed(1).replace('.', ',')}%` : '–');
+
+    function VerPost({ uid, postId, onVoltar, onAbrirRoteiro }) {
+      const post = useDoc(`clientes/${uid}/posts/${postId}`);
+      const [editar, setEditar] = useState(false);
+      if (post === undefined) return <Carregando />;
+      if (post === null) return <div className="tela-centro"><button className="btn" onClick={onVoltar}>Voltar</button></div>;
+      const p = { id: postId, ...post };
+      if (!p.metricas || editar) return <FormMetricas uid={uid} post={p} onVoltar={() => (editar ? setEditar(false) : onVoltar())} onSalvo={() => { setEditar(false); window.scrollTo(0, 0); }} />;
+      const d = p.diagnostico || {};
+      const t = p.taxas || {};
+      const linhas = [
+        ['Alcance', t.alcance?.toLocaleString('pt-BR')], ['Retenção nos 3s', fmtPct(t.retencao3s)], ['Tempo médio ÷ duração', fmtPct(t.tempoMedioSobreDuracao)],
+        ['Compartilhamento', fmtPct(t.taxaCompart)], ['Salvamento', fmtPct(t.taxaSalv)], ['Comentário', fmtPct(t.taxaComent)],
+        ['Conversão', fmtPct(t.conversao)], ['Retenção da sequência', fmtPct(t.retencaoSequencia)], ['Respostas', fmtPct(t.taxaResposta)],
+      ].filter(([, v]) => v && v !== '–');
+      return (
+        <>
+          <Cabecalho><button className="btn fantasma mini" onClick={onVoltar}>Voltar</button></Cabecalho>
+          <main className="wrap conteudo estreito stack-lg">
+            <div className="stack">
+              <span className="sobretitulo">Diagnóstico · {FORMATOS[p.formato]} · {p.pilar} · {dataHora(p.postadoEm)}</span>
+              <h1>{p.tema}</h1>
+              <span className="comparado">{d.comparadoCom}</span>
+            </div>
+            {d.funcionou && <div className="destaque-vencedor"><strong>Funcionou.</strong> O {PILARES[p.pilar].kpi.toLowerCase()} ficou acima da referência. A plataforma guardou o padrão deste post para os próximos.</div>}
+            {d.explicacao && <section className="ideia"><span className="sobretitulo">O que aconteceu</span><p className="explicacao"><TextoMarcado texto={d.explicacao} campo="explicacao" pendentes={d.pendentes} /></p></section>}
+            {d.ajustesProximo?.length > 0 && (
+              <section className="cartao"><div className="faixa" /><div className="cartao-corpo stack">
+                <h2>3 ajustes para o próximo post</h2>
+                <ol className="passos">{d.ajustesProximo.map((a, i) => <li key={i}><TextoMarcado texto={a} campo={`ajustesProximo.${i}`} pendentes={d.pendentes} /></li>)}</ol>
+              </div></section>
+            )}
+            {d.ganchoVencedor && (
+              <div className="destaque-vencedor"><span className="sobretitulo">Gancho vencedor do teste</span><p style={{ marginTop: 6 }}><strong>Gancho {d.ganchoVencedor.n}:</strong> {d.ganchoVencedor.texto}</p></div>
+            )}
+            {d.achados?.length > 0 && (
+              <section className="stack">
+                <h3>O que os números mostram</h3>
+                {d.achados.map((a, i) => <div key={i} className={'achado ' + a.severidade}><strong>{SEVERIDADE[a.severidade]}</strong> {a.mensagem}</div>)}
+              </section>
+            )}
+            {linhas.length > 0 && (
+              <section className="cartao"><div className="cartao-corpo">
+                <h3>Números</h3>
+                <dl className="dados">{linhas.map(([k, v]) => <React.Fragment key={k}><dt>{k}</dt><dd className="num">{v}</dd></React.Fragment>)}</dl>
+              </div></section>
+            )}
+            <div className="barra-acoes">
+              {p.linkPost && <a className="btn" href={p.linkPost} target="_blank" rel="noopener">Abrir no Instagram</a>}
+              <button className="btn" onClick={() => onAbrirRoteiro(p.roteiroId)}>Ver roteiro</button>
+              <button className="btn" onClick={() => setEditar(true)}>Corrigir números</button>
+            </div>
+          </main>
+        </>
+      );
+    }
+
+    // Painel inicial: posts esperando resultado, últimos diagnósticos, melhor post do mês por pilar.
+    function PainelResultados({ uid, onAbrirPost }) {
+      const [posts, setPosts] = useState(null);
+      useEffect(() => db.collection(`clientes/${uid}/posts`).orderBy('postadoEm', 'desc').limit(60).onSnapshot(
+        (s) => setPosts(s.docs.map((d) => ({ id: d.id, ...d.data() }))), () => setPosts([])
+      ), [uid]);
+      if (!posts?.length) return null;
+      const esperando = posts.filter((p) => !p.metricas);
+      const diagnosticos = posts.filter((p) => p.diagnostico).sort((a, b) => (b.metricasPreenchidasEm?.toMillis?.() || 0) - (a.metricasPreenchidasEm?.toMillis?.() || 0)).slice(0, 3);
+      const mes = mesReferencia();
+      const melhores = ['P1', 'P2', 'P3'].map((pl) => posts.filter((p) => p.mes === mes && p.pilar === pl && typeof p.kpiValor === 'number' && p.kpiValor > 0).sort((a, b) => b.kpiValor - a.kpiValor)[0]).filter(Boolean);
+      return (
+        <>
+          {esperando.length > 0 && (
+            <section className="cartao esperando"><div className="cartao-corpo stack">
+              <span className="sobretitulo">Posts esperando resultado</span>
+              {esperando.map((p) => (
+                <button type="button" key={p.id} className="linha-post" onClick={() => onAbrirPost(p.id)}>
+                  <span><strong>{p.tema}</strong><span className="suave peq">{FORMATOS[p.formato]} · postado {dataHora(p.postadoEm)}</span></span>
+                  <span className="btn mini primario">Preencher</span>
+                </button>
+              ))}
+            </div></section>
+          )}
+          {melhores.length > 0 && (
+            <section className="stack">
+              <h2>Melhor post do mês</h2>
+              <div className="lista-roteiros">
+                {melhores.map((p) => (
+                  <button type="button" key={p.id} className="item-roteiro" onClick={() => onAbrirPost(p.id)}>
+                    <span className="sobretitulo">{PILARES[p.pilar].nome} · {PILARES[p.pilar].kpi.split(' (')[0].toLowerCase()} {fmtPct(p.kpiValor)}</span>
+                    <strong>{p.tema}</strong>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+          {diagnosticos.length > 0 && (
+            <section className="stack">
+              <h2>Últimos diagnósticos</h2>
+              <div className="lista-roteiros">
+                {diagnosticos.map((p) => (
+                  <button type="button" key={p.id} className="item-roteiro" onClick={() => onAbrirPost(p.id)}>
+                    <span className="sobretitulo">{FORMATOS[p.formato]} · {p.pilar}{p.diagnostico.funcionou ? ' · funcionou' : ''}</span>
+                    <strong>{p.tema}</strong>
+                    {p.diagnostico.ajustesProximo?.[0] && <span className="suave peq">Próximo: {p.diagnostico.ajustesProximo[0]}</span>}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
+      );
+    }
+
     function InicioCliente({ cliente }) {
       const dna = useDna(cliente.id);
       const [tela, setTela] = useState('inicio');
       const [roteiroId, setRoteiroId] = useState(null);
       const abrir = (id) => { setRoteiroId(id); setTela('roteiro'); window.scrollTo(0, 0); };
+      const [postId, setPostId] = useState(null);
+      const abrirPost = (id) => { setPostId(id); setTela('post'); window.scrollTo(0, 0); };
       const estrategia = useDoc(`clientes/${cliente.id}/estrategia/atual`);
       const foco = useDoc(`clientes/${cliente.id}/focos/${mesReferencia()}`);
       const contagem = useContagemDoMes(cliente.id);
@@ -2840,7 +3184,8 @@
       if (tela === 'foco') return <FormFoco uid={cliente.id} produtos={limparProdutos(dna?.produtos)} quem="cliente" cliente={cliente} onVoltar={() => setTela('inicio')} />;
       if (tela === 'criar' && !falta.length) return <CriarRoteiro dna={dna} estrategia={estrategia} mix={mix} contagem={contagem} objetivoPerfil={foco?.objetivoPerfil} onPronto={abrir} onVoltar={() => setTela('inicio')} />;
       if (tela === 'biblioteca') return <MeusRoteiros uid={cliente.id} onAbrir={abrir} onVoltar={() => setTela('inicio')} />;
-      if (tela === 'roteiro') return <VerRoteiro uid={cliente.id} id={roteiroId} onVoltar={() => setTela('inicio')} onAbrir={abrir} />;
+      if (tela === 'roteiro') return <VerRoteiro uid={cliente.id} id={roteiroId} onVoltar={() => setTela('inicio')} onAbrir={abrir} onAbrirPost={abrirPost} />;
+      if (tela === 'post') return <VerPost uid={cliente.id} postId={postId} onVoltar={() => setTela('inicio')} onAbrirRoteiro={abrir} />;
 
       return (
         <>
@@ -2869,6 +3214,7 @@
                 </div>
               </div>
             </div>
+            <PainelResultados uid={cliente.id} onAbrirPost={abrirPost} />
             <CartaoFoco foco={foco} mix={mix} contagem={contagem} onEditar={() => setTela('foco')} />
             <RoteirosRecentes uid={cliente.id} onAbrir={abrir} onVerTodos={() => setTela('biblioteca')} />
             <LembreteMarca estrategia={estrategia} />

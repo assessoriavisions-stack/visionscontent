@@ -10,7 +10,7 @@ Frontend em um único `index.html` (React + Babel via CDN, no Netlify) e backend
 - [x] Fase 2: DNA do perfil
 - [x] Fase 3: geração + trava anti-linguagem de IA
 - [x] Fase 4: editor
-- [ ] Fase 5: postado, métricas e diagnóstico
+- [x] Fase 5: postado, métricas e diagnóstico
 - [ ] Fase 6: lembretes (PWA + push)
 - [ ] Fase 7: campanhas
 - [ ] Fase 8: admin avançado
@@ -130,6 +130,21 @@ e do cabeçalho. Logo em `assets/logo-visions.png`.
 - Histórico das últimas 10 versões com "Restaurar" (a versão escolhida vira a mais recente).
 - "Pronto para gravar" (status `pronto`), excluir roteiro, copiar roteiro/legenda/gancho.
 - Biblioteca "Meus roteiros": busca pelo tema e filtro por formato, pilar e status, 50 por vez.
+
+## Fase 5: postado, métricas e diagnóstico
+
+- "Marcar como postado" (`marcarPostado`): link, data e quais ganchos foram ao ar como Reels de teste.
+  Cria o post, agenda lembretes (stories em 20h; o resto em 48h e 7 dias, fila `lembretes/`) e
+  muda o roteiro para `postado`.
+- Formulário de métricas por formato com "?" explicando onde achar cada número no Instagram;
+  stories por frame; P2 com leads e vendas; Reels de teste com visualizações e retenção por gancho.
+- `salvarMetricas`: taxas (11.2), referência (mediana dos últimos 10 do formato com 3+ medidos, senão
+  `config/benchmarks`), regras de `functions/diagnostico/regras.js` (11.4 + gancho vencedor, segundo da
+  queda e "1 variável por vez") e explicação da IA com 3 ajustes, passando pela trava. Se a IA falhar,
+  o diagnóstico sai só com as regras. O diagnóstico sempre diz contra o que comparou.
+- Os diagnósticos e os melhores posts entram no prompt das próximas gerações.
+- Tela inicial: posts esperando resultado, melhor post do mês por pilar e últimos diagnósticos.
+- A mistura de pilares do mês passa a contar os posts **publicados** (não os roteiros criados).
 
 ## Rodar local e testar
 
