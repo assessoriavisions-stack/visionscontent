@@ -415,6 +415,22 @@
     .linha-uso.total { font-weight: 600; background: var(--superficie-2); }
     .linha-uso .num { text-align: right; }
     .no-limite { color: var(--vermelho); font-weight: 600; }
+    .indicadores.quatro { grid-template-columns: repeat(2, 1fr); }
+    @media (min-width: 720px) { .indicadores.quatro { grid-template-columns: repeat(4, 1fr); } }
+    .linha-ranking { display: grid; grid-template-columns: minmax(150px, 2fr) repeat(4, minmax(64px, 1fr)); gap: 8px; padding: 12px 16px; border-top: 1px solid var(--linha-2); align-items: center; font-size: 14px; min-width: 480px; }
+    .linha-ranking.cab, .linha-post-adm.cab { border-top: 0; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--suave); }
+    .linha-ranking .num, .linha-post-adm .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .linha-post-adm { display: grid; grid-template-columns: minmax(200px, 3fr) minmax(120px, 1.4fr) minmax(64px, .8fr) minmax(64px, .8fr) minmax(100px, 1fr); gap: 8px; padding: 12px 16px; border: 0; border-top: 1px solid var(--linha-2); align-items: center; font-size: 14px; min-width: 620px; width: 100%; background: transparent; text-align: left; font: inherit; color: inherit; }
+    button.linha-post-adm { cursor: pointer; }
+    button.linha-post-adm:hover { background: var(--superficie-2); }
+    .so-estreito { display: none; }
+    @media (max-width: 600px) {
+      .so-largo { display: none; }
+      .so-estreito { display: inline; }
+      .linha-ranking { grid-template-columns: minmax(0, 2fr) repeat(3, minmax(48px, auto)); min-width: 0; padding: 12px 14px; }
+      .linha-post-adm { grid-template-columns: minmax(0, 1fr) minmax(52px, auto) auto; min-width: 0; padding: 12px 14px; }
+    }
+    .exemplo-real { margin: 0; padding: 10px 14px; border-left: 3px solid var(--amarelo); background: var(--superficie-2); border-radius: 0 var(--raio-sm) var(--raio-sm) 0; white-space: pre-wrap; font-size: 14.5px; }
 
     /* Tutorial */
     .tutorial .modal-corpo { min-height: 430px; display: flex; flex-direction: column; }
@@ -960,7 +976,7 @@
       );
     }
 
-    function CartaoCliente({ c, onEditar, onSenha, onEstrategia }) {
+    function CartaoCliente({ c, onEditar, onSenha, onEstrategia, onPainel }) {
       const [ocupado, setOcupado] = useState(false);
       const ativo = c.status === 'ativo';
       const usadas = geracoesDoMes(c);
@@ -1030,6 +1046,7 @@
           </div>
 
           <div className="acoes">
+            <button className="btn mini primario" onClick={() => onPainel(c)} disabled={ocupado}>Ver painel</button>
             <button className="btn mini" onClick={() => onEditar(c)} disabled={ocupado}>Editar</button>
             <button className="btn mini" onClick={() => onEstrategia(c)} disabled={ocupado}>Estratégia</button>
             <button className="btn mini" onClick={novaSenha} disabled={ocupado}>Nova senha</button>
@@ -1282,6 +1299,282 @@
       );
     }
 
+    // ==========================================================
+    // Admin: painel de um cliente (o que ela preencheu + como os posts performam)
+    // ==========================================================
+    const media = (xs) => { const v = xs.filter((x) => typeof x === 'number' && isFinite(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+    const diasDesde = (ts) => (ts?.toMillis ? Math.max(0, Math.floor((Date.now() - ts.toMillis()) / 86400000)) : null);
+    const haQuanto = (ts) => { const d = diasDesde(ts); return d == null ? '' : d === 0 ? 'hoje' : `há ${d} dia${d === 1 ? '' : 's'}`; };
+    const fmtNum = (x) => (typeof x === 'number' ? Math.round(x).toLocaleString('pt-BR') : '–');
+    const ehVideoFmt = (f) => ['reels', 'serie'].includes(f);
+    const tipoGanchoVencedor = (p) => { const n = p.diagnostico?.ganchoVencedor?.n; return n ? (p.ganchosTestados || []).find((g) => g.n === n)?.tipo || null : null; };
+
+    // O que mais funciona em cada dimensão (só posts com resultado).
+    const dimensoes = () => [
+      ['formato', 'Formato', (p) => p.formato, FORMATOS],
+      ['formatoVisual', 'Formato visual (vídeo)', (p) => p.formatoVisual, FORMATOS_VISUAIS],
+      ['angulo', 'Ângulo', (p) => p.angulo, ANGULOS],
+      ['gancho', 'Tipo de gancho vencedor', tipoGanchoVencedor, TIPOS_GANCHO],
+      ['pilar', 'Pilar', (p) => p.pilar, { P1: 'P1 · Atração', P2: 'P2 · Venda', P3: 'P3 · Fidelização' }],
+      ['editoria', 'Editoria', (p) => p.editoria, null],
+      ['estilo', 'Estilo', (p) => p.estilo, ESTILOS],
+    ];
+    function rankingPor(posts, pegar, nomes) {
+      const g = {};
+      posts.forEach((p) => { const k = pegar(p); if (!k) return; (g[k] = g[k] || []).push(p); });
+      return Object.entries(g).map(([k, ps]) => ({
+        k, nome: nomes ? (nomes[k] || k) : k, n: ps.length,
+        alcance: media(ps.map((p) => p.taxas?.alcance)),
+        retencao: media(ps.filter((p) => ehVideoFmt(p.formato)).map((p) => p.taxas?.retencao3s)),
+        funcionou: ps.filter((p) => p.diagnostico?.funcionou).length,
+      })).sort((a, b) => (b.funcionou / b.n) - (a.funcionou / a.n) || (b.alcance || 0) - (a.alcance || 0));
+    }
+
+    function Campo({ rotulo, children, vazio = 'não preenchido' }) {
+      const tem = Array.isArray(children) ? children.some(Boolean) : !!children;
+      return <><dt>{rotulo}</dt><dd>{tem ? children : <span className="suave">{vazio}</span>}</dd></>;
+    }
+
+    function AdminPainelCliente({ cliente, onVoltar, onEstrategia }) {
+      const uid = cliente.id;
+      const dna = useDna(uid);
+      const foco = useDoc(`clientes/${uid}/focos/${mesReferencia()}`);
+      const [roteiros, setRoteiros] = useState(null);
+      const [posts, setPosts] = useState(null);
+      const [campanhas, setCampanhas] = useState(null);
+      const [aba, setAba] = useState('desempenho');
+      const [dim, setDim] = useState('formato');
+      const [abrir, setAbrir] = useState(null); // {tipo: 'roteiro'|'post', id}
+      useEffect(() => db.collection(`clientes/${uid}/roteiros`).orderBy('criadoEm', 'desc').limit(150).onSnapshot((s) => setRoteiros(s.docs.map((d) => ({ id: d.id, ...d.data() }))), () => setRoteiros([])), [uid]);
+      useEffect(() => db.collection(`clientes/${uid}/posts`).orderBy('postadoEm', 'desc').limit(300).onSnapshot((s) => setPosts(s.docs.map((d) => ({ id: d.id, ...d.data() }))), () => setPosts([])), [uid]);
+      useEffect(() => db.collection(`clientes/${uid}/campanhas`).orderBy('criadoEm', 'desc').limit(20).onSnapshot((s) => setCampanhas(s.docs.map((d) => ({ id: d.id, ...d.data() }))), () => setCampanhas([])), [uid]);
+
+      const voltarDoDetalhe = () => { setAbrir(null); window.scrollTo(0, 0); };
+      if (abrir?.tipo === 'roteiro') return <VerRoteiro uid={uid} id={abrir.id} somenteLeitura onVoltar={voltarDoDetalhe} onAbrir={(id) => setAbrir({ tipo: 'roteiro', id })} onAbrirPost={(id) => setAbrir({ tipo: 'post', id })} />;
+      if (abrir?.tipo === 'post') return <VerPost uid={uid} postId={abrir.id} somenteLeitura onVoltar={voltarDoDetalhe} onAbrirRoteiro={(id) => setAbrir({ tipo: 'roteiro', id })} />;
+
+      const mes = mesReferencia();
+      const carregando = !roteiros || !posts || dna === undefined || foco === undefined;
+      const medidos = (posts || []).filter((p) => p.metricas);
+      const esperando = (posts || []).filter((p) => !p.metricas);
+      const postsMes = (posts || []).filter((p) => p.mes === mes);
+      const contagem = { P1: 0, P2: 0, P3: 0, total: 0 };
+      postsMes.forEach((p) => { if (contagem[p.pilar] !== undefined) { contagem[p.pilar]++; contagem.total++; } });
+      const mix = mixDoCliente(foco?.objetivoPerfil, cliente);
+      const roteirosMes = (roteiros || []).filter((r) => r.criadoEm?.toDate && mesReferencia(r.criadoEm.toDate()) === mes);
+      const comMarca = (roteiros || []).filter((r) => ['rascunho', 'pronto'].includes(r.status) && temMarcaAtiva(r)).length;
+      const naoPostados = (roteiros || []).filter((r) => ['rascunho', 'pronto'].includes(r.status)).length;
+      const ultimoPost = posts?.[0]?.postadoEm;
+      const dimAtual = dimensoes().find((d) => d[0] === dim);
+      const ranking = dimAtual ? rankingPor(medidos, dimAtual[2], dimAtual[3]) : [];
+      const alcanceMedio = media(medidos.map((p) => p.taxas?.alcance));
+      const retencaoMedia = media(medidos.filter((p) => ehVideoFmt(p.formato)).map((p) => p.taxas?.retencao3s));
+      const funcionaram = medidos.filter((p) => p.diagnostico?.funcionou).length;
+      const pctMedido = posts?.length ? Math.round((medidos.length / posts.length) * 100) : 0;
+      const n = dna?.negocio || {};
+      const eixos = dna?.tom?.eixos || {};
+      const falta = dna ? faltandoNoDna(dna) : [];
+      const c = campanhaVigente(foco);
+
+      return (
+        <>
+          <Cabecalho rotulo="Admin">
+            <button className="btn fantasma mini" onClick={onVoltar}>Voltar</button>
+          </Cabecalho>
+          <main className="wrap conteudo stack-lg">
+            <div className="cliente-topo">
+              <div className={'avatar ' + corDoNome(cliente.nome)} aria-hidden="true">{iniciais(cliente.nome)}</div>
+              <div className="cliente-nome">
+                <span className="sobretitulo">Painel do cliente</span>
+                <h1 style={{ marginTop: 4 }}>{cliente.nome}</h1>
+                <div className="suave peq">
+                  {cliente.perfilInstagram ? <a href={`https://www.instagram.com/${cliente.perfilInstagram}/`} target="_blank" rel="noopener">@{cliente.perfilInstagram}</a> : 'perfil não informado'}
+                  {' · '}{cliente.crescimento?.fase === 'vencedor_definido' ? `vencedor: ${resumoVencedor(cliente.crescimento.vencedor)}` : 'testando formatos'}
+                  {' · '}{geracoesDoMes(cliente)}{cliente.limiteGeracoesMes != null ? `/${cliente.limiteGeracoesMes}` : ''} gerações em {nomeDoMes()}
+                </div>
+                <button className="btn mini" style={{ marginTop: 10 }} onClick={onEstrategia}>Abrir estratégia</button>
+              </div>
+              <span className={'selo ' + (cliente.status === 'ativo' ? 'ativo' : 'bloqueado')}>{cliente.status === 'ativo' ? 'Ativo' : 'Bloqueado'}</span>
+            </div>
+
+            <div className="abas abas-admin" role="tablist">
+              {[['desempenho', 'Desempenho'], ['preencheu', 'O que ela preencheu'], ['roteiros', 'Roteiros']].map(([id, nome]) => (
+                <button key={id} role="tab" aria-selected={aba === id} className={aba === id ? 'ativa' : ''} onClick={() => setAba(id)}>{nome}</button>
+              ))}
+            </div>
+
+            {carregando && <div className="linha suave"><span className="girando" /> Carregando...</div>}
+
+            {!carregando && aba === 'desempenho' && (
+              <>
+                <div className="indicadores quatro">
+                  <div className="indicador v"><span className="sobretitulo">Roteiros</span><div className="valor">{roteiros.length}</div><div className="suave peq">{roteirosMes.length} em {nomeDoMes()}</div></div>
+                  <div className="indicador a"><span className="sobretitulo">Postados</span><div className="valor">{posts.length}</div><div className="suave peq">{postsMes.length} em {nomeDoMes()}</div></div>
+                  <div className="indicador r"><span className="sobretitulo">Com resultado</span><div className="valor">{pctMedido}%</div><div className="suave peq">{medidos.length} de {posts.length}</div></div>
+                  <div className="indicador v"><span className="sobretitulo">Funcionaram</span><div className="valor">{funcionaram}</div><div className="suave peq">KPI acima da referência</div></div>
+                </div>
+
+                <section className="cartao"><div className="cartao-corpo stack">
+                  <h3>Ritmo</h3>
+                  <dl className="dados">
+                    <Campo rotulo="Último post">{ultimoPost ? `${dataHora(ultimoPost)} (${haQuanto(ultimoPost)})` : null}</Campo>
+                    <Campo rotulo="Alcance médio">{alcanceMedio != null ? fmtNum(alcanceMedio) : null}</Campo>
+                    <Campo rotulo="Retenção 3s média">{retencaoMedia != null ? `${fmtPct(retencaoMedia)} (vídeos)` : null}</Campo>
+                    <Campo rotulo="Roteiros parados">{naoPostados ? `${naoPostados} ainda não postado${naoPostados === 1 ? '' : 's'}` : 'nenhum'}</Campo>
+                    <Campo rotulo="Com marca de IA">{comMarca ? `${comMarca} roteiro${comMarca === 1 ? '' : 's'} com trecho marcado sem reescrever` : 'nenhum'}</Campo>
+                  </dl>
+                </div></section>
+
+                <section className="cartao"><div className="cartao-corpo stack">
+                  <div className="entre"><h3>Mistura de {nomeDoMes()}</h3>{OBJETIVOS_PERFIL[foco?.objetivoPerfil] && <span className="objetivo-perfil">{OBJETIVOS_PERFIL[foco.objetivoPerfil].nome}</span>}</div>
+                  {mix ? <MisturaDoMes mix={mix} contagem={contagem} /> : <p className="suave peq">Ela ainda não escolheu o objetivo do perfil no foco do mês.</p>}
+                </div></section>
+
+                <section className="stack">
+                  <div className="entre" style={{ alignItems: 'flex-end' }}>
+                    <div><h2>O que está funcionando</h2><p className="suave peq">Só posts com resultado. Ordem: % que funcionou, depois alcance médio. Use para decidir o formato vencedor.</p></div>
+                    <select value={dim} onChange={(e) => setDim(e.target.value)} aria-label="Agrupar por" style={{ maxWidth: 260 }}>
+                      {dimensoes().map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
+                    </select>
+                  </div>
+                  {!ranking.length ? <div className="cartao vazio"><p className="suave">{medidos.length ? 'Nenhum post com essa informação ainda.' : 'Ainda não há posts com resultado preenchido.'}</p></div> : (
+                    <div className="tabela-uso" role="table">
+                      <div className="linha-ranking cab" role="row"><span role="columnheader">{dimAtual[1]}</span><span role="columnheader" className="num">Posts</span><span role="columnheader" className="num">Funcionou</span><span role="columnheader" className="num">Alcance</span><span role="columnheader" className="num so-largo">Ret. 3s</span></div>
+                      {ranking.map((x) => (
+                        <div className="linha-ranking" role="row" key={x.k}>
+                          <span role="cell">{x.nome}</span><span role="cell" className="num">{x.n}</span>
+                          <span role="cell" className="num">{x.funcionou} <span className="suave">({Math.round((x.funcionou / x.n) * 100)}%)</span></span>
+                          <span role="cell" className="num">{fmtNum(x.alcance)}</span><span role="cell" className="num so-largo">{x.retencao != null ? fmtPct(x.retencao) : '–'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                {esperando.length > 0 && (
+                  <section className="stack">
+                    <h2>Esperando resultado</h2>
+                    <div className="lista-roteiros">
+                      {esperando.slice(0, 10).map((p) => (
+                        <button type="button" key={p.id} className="item-roteiro" onClick={() => setAbrir({ tipo: 'post', id: p.id })}>
+                          <span className="sobretitulo">{FORMATOS[p.formato]} · {p.pilar} · postado {haQuanto(p.postadoEm)}</span>
+                          <strong>{p.tema}</strong>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                <section className="stack">
+                  <h2>Posts publicados</h2>
+                  {!posts.length ? <div className="cartao vazio"><p className="suave">Ela ainda não marcou nenhum post como postado.</p></div> : (
+                    <div className="tabela-uso" role="table">
+                      <div className="linha-post-adm cab" role="row"><span role="columnheader">Post</span><span role="columnheader" className="so-largo">Formato</span><span role="columnheader" className="num">Alcance</span><span role="columnheader" className="num so-largo">KPI</span><span role="columnheader">Resultado</span></div>
+                      {posts.slice(0, 40).map((p) => (
+                        <button type="button" className="linha-post-adm" role="row" key={p.id} onClick={() => setAbrir({ tipo: 'post', id: p.id })}>
+                          <span role="cell"><strong>{p.tema}</strong><span className="suave peq"> · {paraBR(p.postadoEm)}<span className="so-estreito"> · {FORMATOS[p.formato]} · {p.pilar}</span></span></span>
+                          <span role="cell" className="peq so-largo">{FORMATOS[p.formato]} · {p.pilar}</span>
+                          <span role="cell" className="num">{fmtNum(p.taxas?.alcance)}</span>
+                          <span role="cell" className="num so-largo">{typeof p.kpiValor === 'number' ? fmtPct(p.kpiValor) : '–'}</span>
+                          <span role="cell">{!p.metricas ? <span className="selo alerta">sem números</span> : p.diagnostico?.funcionou ? <span className="selo vencedor">funcionou</span> : <span className="selo testes">abaixo</span>}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </>
+            )}
+
+            {!carregando && aba === 'preencheu' && (
+              <>
+                {!dna && <div className="aviso">Ela ainda não começou o DNA.</div>}
+                {dna && (falta.length > 0
+                  ? <div className="aviso">Falta no DNA: {falta.join(', ')}.</div>
+                  : <div className="destaque-vencedor">DNA completo{dna.onboardingConcluido ? ' e onboarding concluído' : ''}.{dna.atualizadoEm ? ` Última alteração: ${paraBR(dna.atualizadoEm)}.` : ''}</div>)}
+
+                <section className="cartao"><div className="cartao-corpo stack">
+                  <div className="entre"><h3>Foco de {nomeDoMes()}</h3></div>
+                  {!foco ? <p className="suave">Ela ainda não definiu o foco deste mês.</p> : (
+                    <dl className="dados">
+                      <Campo rotulo="Objetivo do perfil">{OBJETIVOS_PERFIL[foco.objetivoPerfil]?.nome}</Campo>
+                      <Campo rotulo="Produto em destaque">{foco.produtoFoco}</Campo>
+                      <Campo rotulo="Objetivo do mês">{foco.objetivo}</Campo>
+                      <Campo rotulo="Campanha" vazio="sem campanha ativa">{c ? <><strong>{c.nome}</strong>{c.fim ? ` · até ${dataBR(c.fim)}` : ''}{c.oferta && <div>{c.oferta}</div>}{c.mecanica && <div className="suave peq">{c.mecanica}</div>}{c.cta && <div className="peq">CTA: {c.cta}</div>}</> : null}</Campo>
+                    </dl>
+                  )}
+                </div></section>
+
+                {dna && <>
+                  <section className="cartao"><div className="cartao-corpo stack">
+                    <h3>Negócio</h3>
+                    <dl className="dados">
+                      <Campo rotulo="O que faz">{n.oQueFaz}</Campo>
+                      <Campo rotulo="Para quem">{n.paraQuem}</Campo>
+                      <Campo rotulo="Diferencial">{n.diferencial}</Campo>
+                      <Campo rotulo="Oferta principal">{n.ofertaPrincipal}</Campo>
+                      <Campo rotulo="Onde vende">{DESTINOS_VENDA[n.destinoVenda]}</Campo>
+                      <Campo rotulo="Tema principal">{dna.temaPrincipal}</Campo>
+                      <Campo rotulo="Subtemas">{(dna.subtemas || []).filter(Boolean).join(' · ')}</Campo>
+                    </dl>
+                  </div></section>
+
+                  <section className="cartao"><div className="cartao-corpo stack">
+                    <h3>Produtos</h3>
+                    {!(dna.produtos || []).length ? <p className="suave">Nenhum produto cadastrado.</p> : (
+                      <ul className="regras">{dna.produtos.map((p, i) => <li key={i}><strong>{p.nome}</strong>{p.preco ? ` · ${p.preco}` : ''}{p.descricao ? `. ${p.descricao}` : ''}{p.paraQuem ? <span className="suave"> Para: {p.paraQuem}</span> : ''}</li>)}</ul>
+                    )}
+                  </div></section>
+
+                  <section className="cartao"><div className="cartao-corpo stack">
+                    <h3>Tom de voz</h3>
+                    <dl className="dados">
+                      {EIXOS.map((e) => <Campo key={e.id} rotulo={`${e.a} / ${e.b}`}>{eixos[e.id] ? `${eixos[e.id]} de 5${eixos[e.id] <= 2 ? ` (mais ${e.a.toLowerCase()})` : eixos[e.id] >= 4 ? ` (mais ${e.b.toLowerCase()})` : ' (meio a meio)'}` : null}</Campo>)}
+                      <Campo rotulo="Expressões que usa">{(dna.expressoesQueUsa || []).join(' · ')}</Campo>
+                      <Campo rotulo="Palavras proibidas" vazio="nenhuma">{(dna.palavrasProibidas || []).join(' · ')}</Campo>
+                    </dl>
+                    {dna.tom?.perfilDeVozExtraido && <div className="nota"><span className="sobretitulo">Perfil de voz</span><div style={{ whiteSpace: 'pre-wrap' }}>{dna.tom.perfilDeVozExtraido}</div></div>}
+                    {(dna.tom?.exemplosReais || []).filter((x) => x?.trim()).length > 0 && (
+                      <div className="stack"><span className="sobretitulo">Exemplos reais que ela colou</span>
+                        {dna.tom.exemplosReais.filter((x) => x?.trim()).map((x, i) => <blockquote key={i} className="exemplo-real">{x}</blockquote>)}
+                      </div>
+                    )}
+                  </div></section>
+                </>}
+
+                <section className="cartao"><div className="cartao-corpo stack">
+                  <h3>Campanhas planejadas</h3>
+                  {!campanhas?.length ? <p className="suave">Nenhum cronograma de campanha criado.</p> : (
+                    <ul className="regras">{campanhas.map((x) => {
+                      const ps = x.posts || [];
+                      const feitos = ps.filter((p) => ['postado', 'medido'].includes(p.status)).length;
+                      return <li key={x.id}><strong>{x.nome}</strong>{x.dataInicio ? ` · ${dataBR(x.dataInicio)}${x.dataLimite ? ` a ${dataBR(x.dataLimite)}` : ''}` : ''} <span className="suave">· {feitos} de {ps.length} posts publicados</span></li>;
+                    })}</ul>
+                  )}
+                </div></section>
+              </>
+            )}
+
+            {!carregando && aba === 'roteiros' && (
+              <section className="stack">
+                <p className="suave peq">Os roteiros abrem só para leitura: você vê o que ela gerou e editou, sem mexer em nada.</p>
+                {!roteiros.length ? <div className="cartao vazio"><p className="suave">Ela ainda não gerou nenhum roteiro.</p></div> : (
+                  <div className="lista-roteiros">
+                    {roteiros.map((r) => (
+                      <button type="button" key={r.id} className="item-roteiro" onClick={() => setAbrir({ tipo: 'roteiro', id: r.id })}>
+                        <span className="sobretitulo">{FORMATOS[r.formato]} · {r.pilar} · {paraBR(r.criadoEm)}</span>
+                        <strong>{r.tema}</strong>
+                        <span className="suave peq">{{ rascunho: 'Rascunho', pronto: 'Pronto para gravar', postado: 'Postado', medido: 'Medido' }[r.status] || r.status}{r.editoria ? ` · ${r.editoria}` : ''}{(r.versoes || []).some((v) => v.editadoPor === 'cliente') ? ' · editado por ela' : ''}{['rascunho', 'pronto'].includes(r.status) && temMarcaAtiva(r) ? ' · tem marca de IA' : ''}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+          </main>
+        </>
+      );
+    }
+
     function PainelAdmin() {
       const [clientes, setClientes] = useState(null);
       const [erro, setErro] = useState('');
@@ -1290,6 +1583,7 @@
       const [modal, setModal] = useState(null); // {tipo: 'novo'|'editar'|'senha', dados}
       const [configFalta, setConfigFalta] = useState(false);
       const [estrategiaDe, setEstrategiaDe] = useState(null);
+      const [painelDe, setPainelDe] = useState(null);
       const [aba, setAba] = useState('clientes');
 
       useEffect(() => {
@@ -1331,6 +1625,8 @@
 
       const fechar = useCallback(() => setModal(null), []);
       if (estrategiaDe) return <EstrategiaCliente cliente={estrategiaDe} onVoltar={() => setEstrategiaDe(null)} />;
+      const clientePainel = painelDe && (clientes || []).find((c) => c.id === painelDe);
+      if (clientePainel) return <AdminPainelCliente cliente={clientePainel} onVoltar={() => setPainelDe(null)} onEstrategia={() => { setPainelDe(null); setEstrategiaDe(clientePainel); window.scrollTo(0, 0); }} />;
 
       return (
         <>
@@ -1392,7 +1688,8 @@
                   <CartaoCliente key={c.id} c={c}
                     onEditar={(c) => setModal({ tipo: 'editar', dados: c })}
                     onSenha={(d) => setModal({ tipo: 'senha', dados: d })}
-                    onEstrategia={(c) => { setEstrategiaDe(c); window.scrollTo(0, 0); }} />
+                    onEstrategia={(c) => { setEstrategiaDe(c); window.scrollTo(0, 0); }}
+                    onPainel={(c) => { setPainelDe(c.id); window.scrollTo(0, 0); }} />
                 ))}
               </div>
             </div>
@@ -2372,7 +2669,7 @@
       );
     }
 
-    function VerRoteiro({ uid, id, onVoltar, onAbrir, onAbrirPost }) {
+    function VerRoteiro({ uid, id, onVoltar, onAbrir, onAbrirPost, somenteLeitura }) {
       const [r, setR] = useState(undefined);
       const [proximaParte, setProximaParte] = useState(null);
       const [gerandoParte, setGerandoParte] = useState(false);
@@ -2394,7 +2691,7 @@
       if (r === undefined) return <Carregando />;
       if (r === null) return <div className="tela-centro"><div className="stack" style={{ textAlign: 'center' }}><p>Não encontrei esse roteiro.</p><button className="btn" onClick={onVoltar}>Voltar</button></div></div>;
 
-      const editavel = ['rascunho', 'pronto'].includes(r.status);
+      const editavel = !somenteLeitura && ['rascunho', 'pronto'].includes(r.status);
       const c = editando ? rasc.conteudo : (r.conteudo || {});
       const legenda = editando ? rasc.legenda : r.legenda;
       // Marcas: as atuais e as de versões anteriores (só aparecem se o trecho ainda estiver no texto).
@@ -2477,7 +2774,7 @@
       return (
         <>
           <Cabecalho>
-            {!editando && <button className="btn fantasma mini" onClick={() => setHistorico(true)}>Histórico</button>}
+            {!editando && !somenteLeitura && <button className="btn fantasma mini" onClick={() => setHistorico(true)}>Histórico</button>}
             <button className="btn fantasma mini" onClick={() => (editando ? setEditando(false) : onVoltar())}>{editando ? 'Cancelar edição' : 'Voltar'}</button>
           </Cabecalho>
           <main className={'wrap conteudo estreito stack-lg' + (editando ? ' modo-edicao' : '')}>
@@ -2495,7 +2792,7 @@
             </div>
 
             {!editando && (r.avisos || []).map((a) => <div className="aviso" key={a}>{a}</div>)}
-            {!editando && temMarcaAtiva(r) && (
+            {!editando && temMarcaAtiva(r) && !somenteLeitura && (
               <div className="aviso">
                 <strong>Tem trecho marcado com cara de IA.</strong> Reescreva com as suas palavras (botão "Editar") ou regere o bloco antes de gravar ou postar.
               </div>
@@ -2633,7 +2930,7 @@
                 </>
               ) : (
                 <>
-                  {proximaParte && (
+                  {proximaParte && !somenteLeitura && (
                     <button className="btn" onClick={gerarProxima} disabled={gerandoParte}>
                       {gerandoParte ? <><span className="girando" /> Escrevendo a parte {proximaParte}...</> : `Gerar parte ${proximaParte}`}
                     </button>
@@ -3436,12 +3733,22 @@
     const SEVERIDADE = { alta: 'Atenção', media: 'Observação', ok: 'Funcionou' };
     const fmtPct = (x) => (typeof x === 'number' ? `${(x * 100).toFixed(1).replace('.', ',')}%` : '–');
 
-    function VerPost({ uid, postId, onVoltar, onAbrirRoteiro }) {
+    function VerPost({ uid, postId, onVoltar, onAbrirRoteiro, somenteLeitura }) {
       const post = useDoc(`clientes/${uid}/posts/${postId}`);
       const [editar, setEditar] = useState(false);
       if (post === undefined) return <Carregando />;
       if (post === null) return <div className="tela-centro"><button className="btn" onClick={onVoltar}>Voltar</button></div>;
       const p = { id: postId, ...post };
+      if (!p.metricas && somenteLeitura) return (
+        <>
+          <Cabecalho><button className="btn fantasma mini" onClick={onVoltar}>Voltar</button></Cabecalho>
+          <main className="wrap conteudo estreito stack-lg">
+            <div className="stack"><span className="sobretitulo">{FORMATOS[p.formato]} · {p.pilar} · postado {dataHora(p.postadoEm)}</span><h1>{p.tema}</h1></div>
+            <div className="aviso">A cliente ainda não preencheu os resultados deste post.</div>
+            <div className="barra-acoes">{p.linkPost && <a className="btn" href={p.linkPost} target="_blank" rel="noopener">Abrir no Instagram</a>}<button className="btn" onClick={() => onAbrirRoteiro(p.roteiroId)}>Ver roteiro</button></div>
+          </main>
+        </>
+      );
       if (!p.metricas || editar) return <FormMetricas uid={uid} post={p} onVoltar={() => (editar ? setEditar(false) : onVoltar())} onSalvo={() => { setEditar(false); window.scrollTo(0, 0); }} />;
       const d = p.diagnostico || {};
       const t = p.taxas || {};
@@ -3485,7 +3792,7 @@
             <div className="barra-acoes">
               {p.linkPost && <a className="btn" href={p.linkPost} target="_blank" rel="noopener">Abrir no Instagram</a>}
               <button className="btn" onClick={() => onAbrirRoteiro(p.roteiroId)}>Ver roteiro</button>
-              <button className="btn" onClick={() => setEditar(true)}>Corrigir números</button>
+              {!somenteLeitura && <button className="btn" onClick={() => setEditar(true)}>Corrigir números</button>}
             </div>
           </main>
         </>
