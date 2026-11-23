@@ -107,7 +107,8 @@ service cloud.firestore {
         allow update: if podeAcessar(uid)
           && naoMexeEm(['trava', 'criadoEm', 'formato', 'pilar', 'campanhaId', 'serieId', 'parteSerie', 'temaSugeridoPelaIA'])
           && request.resource.data.status in ['rascunho', 'pronto']
-          && resource.data.status in ['rascunho', 'pronto'];
+          && resource.data.status in ['rascunho', 'pronto']
+          && request.resource.data.get('versoes', []).size() <= 10;
         allow delete: if podeAcessar(uid) && resource.data.status in ['rascunho', 'pronto'];
       }
 

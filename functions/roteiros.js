@@ -254,7 +254,7 @@ exports.gerarRoteiro = callableCliente(async ({ data }, { uid, cliente }) => {
     serieId,
     parteSerie,
     status: 'rascunho',
-    versoes: [{ conteudo, legenda, editadoPor: 'ia', em: agora }].slice(-MAX_VERSOES),
+    versoes: [{ conteudo, legenda, editadoPor: 'ia', em: agora, pendentes: r.trava.pendentes }].slice(-MAX_VERSOES),
     criadoEm: FieldValue.serverTimestamp(),
     atualizadoEm: FieldValue.serverTimestamp(),
   });
@@ -264,4 +264,8 @@ exports.gerarRoteiro = callableCliente(async ({ data }, { uid, cliente }) => {
 
 exports.validarEscolhas = validarEscolhas;
 exports.gerarComDuracao = gerarComDuracao;
+exports.carregarAprendizados = carregarAprendizados;
+exports.carregarRecentes = carregarRecentes;
+exports.MAX_VERSOES = MAX_VERSOES;
+exports.OPCOES_IA = OPCOES_IA;
 exports.ganchoDe = ganchoDe;

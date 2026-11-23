@@ -9,7 +9,7 @@ Frontend em um único `index.html` (React + Babel via CDN, no Netlify) e backend
 - [x] **Fase 1: base, acesso e admin**
 - [x] Fase 2: DNA do perfil
 - [x] Fase 3: geração + trava anti-linguagem de IA
-- [ ] Fase 4: editor
+- [x] Fase 4: editor
 - [ ] Fase 5: postado, métricas e diagnóstico
 - [ ] Fase 6: lembretes (PWA + push)
 - [ ] Fase 7: campanhas
@@ -119,6 +119,17 @@ e do cabeçalho. Logo em `assets/logo-visions.png`.
   o passo do pilar sugere o pilar que mais está faltando.
 - No prompt, a parte fixa do cliente (perfil, voz, produtos, estratégia, plano) vai em cache entre
   gerações; o foco do mês e as escolhas do conteúdo vão na parte variável.
+
+## Fase 4: editor
+
+- Botão "Editar": todos os textos viram caixas editáveis; salvar cria uma versão "Você editou".
+  O que o cliente escreve não passa pela trava (é a voz dela).
+- "Regerar" em cada bloco, slide, frame, arte, gancho e legenda, com pedido opcional
+  ("mais curto", "mais engraçado"). `regerarBloco` reescreve só aquele item, mantém o resto,
+  passa pela trava e mantém o gancho 1 igual à abertura do roteiro.
+- Histórico das últimas 10 versões com "Restaurar" (a versão escolhida vira a mais recente).
+- "Pronto para gravar" (status `pronto`), excluir roteiro, copiar roteiro/legenda/gancho.
+- Biblioteca "Meus roteiros": busca pelo tema e filtro por formato, pilar e status, 50 por vez.
 
 ## Rodar local e testar
 

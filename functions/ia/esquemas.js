@@ -125,4 +125,14 @@ function validarConteudo(formato, c) {
   return p;
 }
 
-module.exports = { ESQUEMAS, temas, estrategia, duracaoEstimadaSeg, validarConteudo, TIPOS_BLOCO, FRAMES_INTERACAO };
+// Esquemas de um item só, para "Regerar este bloco".
+const ITENS = {
+  blocos: bloco,
+  ganchos: gancho,
+  slides: obj({ n: int, texto: str, visual: str }),
+  frames: obj({ n: int, tipo: { type: 'string', enum: TIPOS_FRAME }, conteudo: str, visual: str, interacao: str }),
+  arte: obj({ headline: str, apoio: str, visual: str }),
+  legenda: obj({ legenda: str }),
+};
+
+module.exports = { ESQUEMAS, ITENS, temas, estrategia, duracaoEstimadaSeg, validarConteudo, TIPOS_BLOCO, FRAMES_INTERACAO };

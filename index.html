@@ -321,6 +321,25 @@
     .mix-campo input { width: 72px; min-height: 40px; padding: 8px 10px; text-align: right; }
     .texto-erro { color: var(--vermelho); font-weight: 600; }
 
+    /* Editor */
+    textarea.editavel { width: 100%; border: 1px dashed #CFC7B5; background: rgba(255,255,255,.7); border-radius: 8px; padding: 6px 8px; min-height: 0; font: inherit; color: inherit; resize: none; overflow: hidden; line-height: inherit; }
+    textarea.editavel:focus { border-style: solid; border-color: var(--azul); box-shadow: 0 0 0 3px var(--azul-claro); background: #fff; }
+    .ideia textarea.editavel { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.3); color: var(--marfim); }
+    .ideia textarea.editavel:focus { background: rgba(255,255,255,.12); }
+    .modo-edicao .visual::before, .modo-edicao .na-tela::before { display: block; margin-bottom: 4px; }
+    .regerar-btn { align-self: flex-start; }
+    .regerar-caixa { display: flex; flex-direction: column; gap: 8px; background: var(--superficie-2); border: 1px solid var(--linha); border-radius: 10px; padding: 10px; }
+    .regerar-status { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--azul); }
+    .regerando { opacity: .6; transition: opacity .2s; }
+    .versoes { display: flex; flex-direction: column; }
+    .versao { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--linha-2); }
+    .versao:first-child { border-top: 0; }
+    .etiquetas-roteiro .status-pronto { background: var(--verde-claro); color: var(--verde); border-color: #C9E2D3; }
+    .etiquetas-roteiro .status-rascunho { background: var(--azul-claro); color: var(--azul); border-color: #C9D6EE; }
+    .etiquetas-roteiro .status-postado, .etiquetas-roteiro .status-medido { background: var(--amarelo-claro); color: #8A6400; border-color: #F6E3A8; }
+    .filtros-biblioteca { display: grid; gap: 10px; grid-template-columns: 1fr; }
+    @media (min-width: 720px) { .filtros-biblioteca { grid-template-columns: 2fr 1fr 1fr 1fr; } }
+
     /* Fase de crescimento */
     .selo.testes { background: var(--azul-claro); color: var(--azul); }
     .selo.vencedor { background: var(--amarelo-claro); color: #8A6400; }
@@ -1919,10 +1938,95 @@
       return l.join('\n').trim();
     }
 
+    // ---------- editor do roteiro (Fase 4) ----------
+
+    // Tem trecho com cara de IA ainda presente no texto atual?
+    function temMarcaAtiva(r) {
+      const pend = [...(r.trava?.pendentes || []), ...(r.versoes || []).flatMap((v) => v.pendentes || [])];
+      return pend.some((p) => {
+        const v = p.campo === 'legenda' ? r.legenda : p.campo.split('.').reduce((o, k) => (o == null ? o : o[k]), r.conteudo);
+        return typeof v === 'string' && v.includes(p.trecho);
+      });
+    }
+
+    function TextoEditavel({ valor, onChange, grande }) {
+      const ref = React.useRef(null);
+      useEffect(() => {
+        const t = ref.current;
+        if (t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px'; }
+      }, [valor]);
+      return <textarea ref={ref} className={'editavel' + (grande ? ' grande' : '')} rows="1" value={valor || ''} onChange={(e) => onChange(e.target.value)} />;
+    }
+
+    const NOMES_ALVO = { blocos: 'bloco', ganchos: 'gancho', slides: 'slide', frames: 'frame', arte: 'arte', legenda: 'legenda' };
+    function descreverVersao(v) {
+      if (v.editadoPor === 'cliente') return v.restauradaDe ? 'Você restaurou uma versão anterior' : 'Você editou';
+      if (!v.alvo) return 'Roteiro gerado';
+      const [l, i] = v.alvo.split('.');
+      return `IA regerou ${l === 'legenda' || l === 'arte' ? 'a ' + NOMES_ALVO[l] : `o ${NOMES_ALVO[l]} ${Number(i) + 1}`}`;
+    }
+    const dataHora = (ts) => (ts?.toDate ? new Intl.DateTimeFormat('pt-BR', { timeZone: FUSO, day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(ts.toDate()) : '');
+
+    // Botão "Regerar" de um bloco, com pedido opcional.
+    function Regerar({ uid, roteiroId, alvo, rotulo, ocupado, setOcupado }) {
+      const [aberto, setAberto] = useState(false);
+      const [pedido, setPedido] = useState('');
+      const rodando = ocupado === alvo;
+      async function rodar() {
+        setOcupado(alvo);
+        try {
+          await chamar('regerarBloco', { roteiroId, alvo, pedido }, { timeout: 300000 });
+          toast(`${rotulo} reescrito.`);
+          setAberto(false);
+          setPedido('');
+        } catch (e) {
+          toast(mensagemErro(e));
+        }
+        setOcupado(null);
+      }
+      if (rodando) return <div className="regerar-status"><span className="girando" /> Reescrevendo e conferindo...</div>;
+      if (!aberto) return <button type="button" className="btn texto peq regerar-btn" disabled={!!ocupado} onClick={() => setAberto(true)}>Regerar {rotulo.toLowerCase()}</button>;
+      return (
+        <div className="regerar-caixa">
+          <input placeholder="O que mudar? Ex.: mais curto, mais engraçado (opcional)" value={pedido} onChange={(e) => setPedido(e.target.value)} maxLength={300}
+            onKeyDown={(e) => { if (e.key === 'Enter') rodar(); }} autoFocus />
+          <div className="linha">
+            <button type="button" className="btn mini primario" onClick={rodar}>Regerar</button>
+            <button type="button" className="btn mini fantasma" onClick={() => setAberto(false)}>Cancelar</button>
+          </div>
+        </div>
+      );
+    }
+
+    function Historico({ r, onRestaurar, onFechar }) {
+      const versoes = [...(r.versoes || [])].map((v, i) => ({ ...v, i })).reverse();
+      return (
+        <Modal titulo="Histórico" sobretitulo="Últimas 10 versões" onFechar={onFechar}>
+          <p className="suave peq">Restaurar não apaga nada: a versão escolhida vira a mais recente.</p>
+          <div className="versoes">
+            {versoes.map((v, k) => (
+              <div className="versao" key={v.i}>
+                <div>
+                  <strong>{descreverVersao(v)}</strong>
+                  <div className="suave peq">{dataHora(v.em)}{k === 0 ? ' · atual' : ''}</div>
+                </div>
+                {k > 0 && <button className="btn mini" onClick={() => onRestaurar(v)}>Restaurar</button>}
+              </div>
+            ))}
+          </div>
+        </Modal>
+      );
+    }
+
     function VerRoteiro({ uid, id, onVoltar, onAbrir }) {
       const [r, setR] = useState(undefined);
       const [proximaParte, setProximaParte] = useState(null);
       const [gerandoParte, setGerandoParte] = useState(false);
+      const [editando, setEditando] = useState(false);
+      const [rasc, setRasc] = useState(null); // { conteudo, legenda } em edição
+      const [salvando, setSalvando] = useState(false);
+      const [ocupado, setOcupado] = useState(null); // alvo sendo regerado
+      const [historico, setHistorico] = useState(false);
       useEffect(() => db.doc(`clientes/${uid}/roteiros/${id}`).onSnapshot((s) => setR(s.exists ? { id: s.id, ...s.data() } : null), () => setR(null)), [uid, id]);
       useEffect(() => {
         if (!r?.serieId) return;
@@ -1935,11 +2039,69 @@
       if (r === undefined) return <Carregando />;
       if (r === null) return <div className="tela-centro"><div className="stack" style={{ textAlign: 'center' }}><p>Não encontrei esse roteiro.</p><button className="btn" onClick={onVoltar}>Voltar</button></div></div>;
 
-      const c = r.conteudo || {};
-      const pend = r.trava?.pendentes || [];
-      const M = (texto, campo) => <TextoMarcado texto={texto} campo={campo} pendentes={pend} />;
+      const editavel = ['rascunho', 'pronto'].includes(r.status);
+      const c = editando ? rasc.conteudo : (r.conteudo || {});
+      const legenda = editando ? rasc.legenda : r.legenda;
+      // Marcas: as atuais e as de versões anteriores (só aparecem se o trecho ainda estiver no texto).
+      const pend = [...(r.trava?.pendentes || []), ...(r.versoes || []).flatMap((v) => v.pendentes || [])];
       const copiarTexto = async (t, msg) => toast((await copiar(t)) ? msg : 'Não consegui copiar. Selecione e copie à mão.');
 
+      // Campo: texto marcado na leitura, caixa de texto na edição.
+      const set = (caminho, valor) => {
+        const novo = JSON.parse(JSON.stringify(rasc));
+        if (caminho === 'legenda') novo.legenda = valor;
+        else {
+          const ks = caminho.split('.');
+          let o = novo.conteudo;
+          ks.slice(0, -1).forEach((k) => { o = o[k]; });
+          o[ks[ks.length - 1]] = valor;
+        }
+        setRasc(novo);
+      };
+      const F = (texto, campo, grande) => (editando
+        ? <TextoEditavel valor={texto} grande={grande} onChange={(v) => set(campo, v)} />
+        : <TextoMarcado texto={texto} campo={campo} pendentes={pend} />);
+      const R = (alvo, rotulo) => (editavel && !editando ? <Regerar uid={uid} roteiroId={r.id} alvo={alvo} rotulo={rotulo} ocupado={ocupado} setOcupado={setOcupado} /> : null);
+
+      function comecarEdicao() {
+        setRasc({ conteudo: JSON.parse(JSON.stringify(r.conteudo)), legenda: r.legenda || '' });
+        setEditando(true);
+      }
+      async function salvarEdicao() {
+        setSalvando(true);
+        try {
+          const versoes = [...(r.versoes || []), { conteudo: rasc.conteudo, legenda: rasc.legenda, editadoPor: 'cliente', em: firebase.firestore.Timestamp.now() }].slice(-10);
+          await db.doc(`clientes/${uid}/roteiros/${r.id}`).update({ conteudo: rasc.conteudo, legenda: rasc.legenda, versoes, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() });
+          setEditando(false);
+          toast('Alterações salvas.');
+        } catch (e) {
+          toast(mensagemErro(e));
+        }
+        setSalvando(false);
+      }
+      async function restaurar(v) {
+        try {
+          const versoes = [...(r.versoes || []), { conteudo: v.conteudo, legenda: v.legenda, editadoPor: 'cliente', restauradaDe: v.em || null, em: firebase.firestore.Timestamp.now() }].slice(-10);
+          await db.doc(`clientes/${uid}/roteiros/${r.id}`).update({ conteudo: v.conteudo, legenda: v.legenda, versoes, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() });
+          setHistorico(false);
+          toast('Versão restaurada.');
+        } catch (e) {
+          toast(mensagemErro(e));
+        }
+      }
+      async function alternarPronto() {
+        try {
+          await db.doc(`clientes/${uid}/roteiros/${r.id}`).update({ status: r.status === 'pronto' ? 'rascunho' : 'pronto' });
+        } catch (e) { toast(mensagemErro(e)); }
+      }
+      async function excluir() {
+        if (!confirm('Excluir este roteiro? Não dá para desfazer.')) return;
+        try {
+          await db.doc(`clientes/${uid}/roteiros/${r.id}`).delete();
+          toast('Roteiro excluído.');
+          onVoltar();
+        } catch (e) { toast(mensagemErro(e)); }
+      }
       async function gerarProxima() {
         setGerandoParte(true);
         try {
@@ -1951,33 +2113,38 @@
         setGerandoParte(false);
       }
 
+      const STATUS = { rascunho: 'Rascunho', pronto: 'Pronto para gravar', postado: 'Postado', medido: 'Medido' };
       return (
         <>
           <Cabecalho>
-            <button className="btn fantasma mini" onClick={onVoltar}>Voltar</button>
+            {!editando && <button className="btn fantasma mini" onClick={() => setHistorico(true)}>Histórico</button>}
+            <button className="btn fantasma mini" onClick={() => (editando ? setEditando(false) : onVoltar())}>{editando ? 'Cancelar edição' : 'Voltar'}</button>
           </Cabecalho>
-          <main className="wrap conteudo estreito stack-lg">
+          <main className={'wrap conteudo estreito stack-lg' + (editando ? ' modo-edicao' : '')}>
             <div className="stack">
               <span className="sobretitulo">{FORMATOS[r.formato]}{c.nomeSerie ? ` · ${c.nomeSerie} · parte ${r.parteSerie} de ${c.totalPartes}` : ''}</span>
               <h1>{r.tema}</h1>
               <div className="etiquetas-roteiro">
+                <span className={'status-' + r.status}>{STATUS[r.status]}</span>
                 <span>{PILARES[r.pilar]?.nome}</span><span>{ESTILOS[r.estilo]}</span><span>{ANGULOS[r.angulo]}</span><span>{r.framework}</span>
+                {r.editoria && <span>{r.editoria}</span>}
                 {r.formatoVisual && <span>{FORMATOS_VISUAIS[r.formatoVisual]}</span>}
                 {r.duracaoEstimadaSeg ? <span>cerca de {r.duracaoEstimadaSeg}s</span> : null}
               </div>
+              {editando && <div className="aviso">Modo de edição: mude o que quiser com as suas palavras e toque em "Salvar alterações". O que você escreve não passa pela trava.</div>}
             </div>
 
-            {(r.avisos || []).map((a) => <div className="aviso" key={a}>{a}</div>)}
-            {pend.length > 0 && (
+            {!editando && (r.avisos || []).map((a) => <div className="aviso" key={a}>{a}</div>)}
+            {!editando && temMarcaAtiva(r) && (
               <div className="aviso">
-                <strong>{pend.length === 1 ? '1 trecho marcado' : `${pend.length} trechos marcados`} com cara de IA.</strong> Reescreva com as suas palavras antes de gravar ou postar.
+                <strong>Tem trecho marcado com cara de IA.</strong> Reescreva com as suas palavras (botão "Editar") ou regere o bloco antes de gravar ou postar.
               </div>
             )}
 
-            {c.bigIdea && (
+            {c.bigIdea !== undefined && (
               <section className="ideia">
                 <span className="sobretitulo">Ideia central</span>
-                <p>{M(c.bigIdea, 'bigIdea')}</p>
+                <p>{F(c.bigIdea, 'bigIdea', true)}</p>
               </section>
             )}
 
@@ -1985,11 +2152,12 @@
               <section className="stack">
                 <div className="legenda-cores"><span className="cor-fala">Falar</span><span className="cor-visual">Mostrar</span><span className="cor-tela">Texto na tela</span></div>
                 {c.blocos.map((b, i) => (
-                  <article className="bloco" key={i}>
+                  <article className={'bloco' + (ocupado === `blocos.${i}` ? ' regerando' : '')} key={i}>
                     <header><strong>{TIPOS_BLOCO[b.tipo] || b.tipo}</strong><span className="num">{b.tempo}</span></header>
-                    <p className="fala">{M(b.fala, `blocos.${i}.fala`)}</p>
-                    <p className="visual">{M(b.visual, `blocos.${i}.visual`)}</p>
-                    {b.textoTela && <p className="na-tela">{M(b.textoTela, `blocos.${i}.textoTela`)}</p>}
+                    <div className="fala">{F(b.fala, `blocos.${i}.fala`)}</div>
+                    <div className="visual">{F(b.visual, `blocos.${i}.visual`)}</div>
+                    {(b.textoTela || editando) && <div className="na-tela">{F(b.textoTela, `blocos.${i}.textoTela`)}</div>}
+                    {R(`blocos.${i}`, TIPOS_BLOCO[b.tipo] || 'Bloco')}
                   </article>
                 ))}
               </section>
@@ -1997,34 +2165,37 @@
 
             {c.slides && (
               <section className="stack">
-                {c.slides.map((s, i) => (
-                  <article className="bloco" key={i}>
-                    <header><strong>Slide {s.n}</strong>{i === 0 && <span>capa</span>}{i === c.slides.length - 1 && <span>CTA</span>}</header>
-                    <p className="fala">{M(s.texto, `slides.${i}.texto`)}</p>
-                    <p className="visual">{M(s.visual, `slides.${i}.visual`)}</p>
+                {c.slides.map((sl, i) => (
+                  <article className={'bloco' + (ocupado === `slides.${i}` ? ' regerando' : '')} key={i}>
+                    <header><strong>Slide {sl.n}</strong>{i === 0 && <span>capa</span>}{i === c.slides.length - 1 && <span>CTA</span>}</header>
+                    <div className="fala">{F(sl.texto, `slides.${i}.texto`)}</div>
+                    <div className="visual">{F(sl.visual, `slides.${i}.visual`)}</div>
+                    {R(`slides.${i}`, `Slide ${sl.n}`)}
                   </article>
                 ))}
               </section>
             )}
 
             {c.arte && (
-              <article className="bloco">
+              <article className={'bloco' + (ocupado === 'arte' ? ' regerando' : '')}>
                 <header><strong>Arte</strong></header>
-                <p className="fala titulo-arte">{M(c.arte.headline, 'arte.headline')}</p>
-                <p className="fala">{M(c.arte.apoio, 'arte.apoio')}</p>
-                <p className="visual">{M(c.arte.visual, 'arte.visual')}</p>
+                <div className="fala titulo-arte">{F(c.arte.headline, 'arte.headline')}</div>
+                <div className="fala">{F(c.arte.apoio, 'arte.apoio')}</div>
+                <div className="visual">{F(c.arte.visual, 'arte.visual')}</div>
+                {R('arte', 'Arte')}
               </article>
             )}
 
             {c.frames && (
               <section className="stack">
-                {c.objetivoSequencia && <p className="suave">{M(c.objetivoSequencia, 'objetivoSequencia')}</p>}
+                {c.objetivoSequencia !== undefined && <div className="suave">{F(c.objetivoSequencia, 'objetivoSequencia')}</div>}
                 {c.frames.map((f, i) => (
-                  <article className="bloco" key={i}>
+                  <article className={'bloco' + (ocupado === `frames.${i}` ? ' regerando' : '')} key={i}>
                     <header><strong>Frame {f.n}</strong><span>{TIPOS_FRAME[f.tipo] || f.tipo}</span></header>
-                    <p className="fala">{M(f.conteudo, `frames.${i}.conteudo`)}</p>
-                    <p className="visual">{M(f.visual, `frames.${i}.visual`)}</p>
-                    {f.interacao && <p className="na-tela">{M(f.interacao, `frames.${i}.interacao`)}</p>}
+                    <div className="fala">{F(f.conteudo, `frames.${i}.conteudo`)}</div>
+                    <div className="visual">{F(f.visual, `frames.${i}.visual`)}</div>
+                    {(f.interacao || editando) && <div className="na-tela">{F(f.interacao, `frames.${i}.interacao`)}</div>}
+                    {R(`frames.${i}`, `Frame ${f.n}`)}
                   </article>
                 ))}
               </section>
@@ -2042,14 +2213,19 @@
                       : r.formato === 'carrossel' ? 'São 5 capas diferentes para o slide 1. Teste uma por vez e mude só a capa.' : 'São 5 headlines diferentes. Teste uma por vez e mude só a headline.'}
                   </p>
                   {c.ganchos.map((g, i) => (
-                    <div className="gancho" key={i}>
+                    <div className={'gancho' + (ocupado === `ganchos.${i}` ? ' regerando' : '')} key={i}>
                       <div className="gancho-n">{g.n}</div>
                       <div className="gancho-corpo">
                         <span className="sobretitulo">{TIPOS_GANCHO[g.tipo] || g.tipo}</span>
-                        <p className="fala">{M(g.texto, `ganchos.${i}.texto`)}</p>
-                        {g.textoTela && <p className="na-tela">{M(g.textoTela, `ganchos.${i}.textoTela`)}</p>}
-                        {g.visual && <p className="visual">{M(g.visual, `ganchos.${i}.visual`)}</p>}
-                        <div><button type="button" className="btn mini" onClick={() => copiarTexto(g.texto, `Gancho ${g.n} copiado.`)}>Copiar gancho {g.n}</button></div>
+                        <div className="fala">{F(g.texto, `ganchos.${i}.texto`)}</div>
+                        {(g.textoTela || editando) && <div className="na-tela">{F(g.textoTela, `ganchos.${i}.textoTela`)}</div>}
+                        {(g.visual || editando) && <div className="visual">{F(g.visual, `ganchos.${i}.visual`)}</div>}
+                        {!editando && (
+                          <div className="linha">
+                            <button type="button" className="btn mini" onClick={() => copiarTexto(g.texto, `Gancho ${g.n} copiado.`)}>Copiar gancho {g.n}</button>
+                            {R(`ganchos.${i}`, `Gancho ${g.n}`)}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -2057,41 +2233,131 @@
               </section>
             )}
 
-            {c.angulosParaTestar?.length > 0 && (
+            {c.angulosParaTestar?.length > 0 && !editando && (
               <section className="stack">
                 <h3>Mesma história, outros ângulos</h3>
                 <p className="suave peq">Para os próximos testes. Mude só o ângulo e mantenha o resto, assim você sabe o que fez diferença.</p>
                 <ul className="regras">
                   {c.angulosParaTestar.map((a, i) => (
-                    <li key={i}><strong>{ANGULOS[a.angulo] || a.angulo}.</strong> {M(a.ideia, `angulosParaTestar.${i}.ideia`)}</li>
+                    <li key={i}><strong>{ANGULOS[a.angulo] || a.angulo}.</strong> <TextoMarcado texto={a.ideia} campo={`angulosParaTestar.${i}.ideia`} pendentes={pend} /></li>
                   ))}
                 </ul>
               </section>
             )}
 
-            {r.legenda && (
-              <section className="stack">
-                <div className="entre"><h3>Legenda</h3><button className="btn mini" onClick={() => copiarTexto(r.legenda, 'Legenda copiada.')}>Copiar legenda</button></div>
-                <p className="legenda-texto">{M(r.legenda, 'legenda')}</p>
+            {(legenda || editando) && (
+              <section className={'stack' + (ocupado === 'legenda' ? ' regerando' : '')}>
+                <div className="entre"><h3>Legenda</h3>{!editando && <button className="btn mini" onClick={() => copiarTexto(r.legenda, 'Legenda copiada.')}>Copiar legenda</button>}</div>
+                <div className="legenda-texto">{F(legenda, 'legenda')}</div>
+                {R('legenda', 'Legenda')}
               </section>
             )}
 
-            {c.notaProducao && <div className="nota"><span className="sobretitulo">Nota de produção</span><p>{M(c.notaProducao, 'notaProducao')}</p></div>}
+            {(c.notaProducao || (editando && c.notaProducao !== undefined)) && <div className="nota"><span className="sobretitulo">Nota de produção</span><div>{F(c.notaProducao, 'notaProducao')}</div></div>}
+
+            {!editando && editavel && (
+              <div className="linha" style={{ justifyContent: 'space-between' }}>
+                <label className="interruptor">
+                  <input type="checkbox" checked={r.status === 'pronto'} onChange={alternarPronto} />
+                  <span>Pronto para gravar</span>
+                </label>
+                <button className="btn texto peq" style={{ color: 'var(--vermelho)' }} onClick={excluir}>Excluir roteiro</button>
+              </div>
+            )}
 
             <div className="barra-acoes">
-              {proximaParte && (
-                <button className="btn" onClick={gerarProxima} disabled={gerandoParte}>
-                  {gerandoParte ? <><span className="girando" /> Escrevendo a parte {proximaParte}...</> : `Gerar parte ${proximaParte}`}
-                </button>
+              {editando ? (
+                <>
+                  <button className="btn" onClick={() => setEditando(false)} disabled={salvando}>Cancelar</button>
+                  <button className="btn primario" onClick={salvarEdicao} disabled={salvando}>{salvando ? <><span className="girando" /> Salvando...</> : 'Salvar alterações'}</button>
+                </>
+              ) : (
+                <>
+                  {proximaParte && (
+                    <button className="btn" onClick={gerarProxima} disabled={gerandoParte}>
+                      {gerandoParte ? <><span className="girando" /> Escrevendo a parte {proximaParte}...</> : `Gerar parte ${proximaParte}`}
+                    </button>
+                  )}
+                  {editavel && <button className="btn" onClick={comecarEdicao} disabled={!!ocupado}>Editar</button>}
+                  <button className="btn primario" onClick={() => copiarTexto(roteiroParaTexto(r), 'Roteiro copiado.')}>Copiar roteiro</button>
+                </>
               )}
-              <button className="btn primario" onClick={() => copiarTexto(roteiroParaTexto(r), 'Roteiro copiado.')}>Copiar roteiro</button>
             </div>
+          </main>
+          {historico && <Historico r={r} onRestaurar={restaurar} onFechar={() => setHistorico(false)} />}
+        </>
+      );
+    }
+
+    // ---------- biblioteca "Meus roteiros" ----------
+    function MeusRoteiros({ uid, onAbrir, onVoltar }) {
+      const [lista, setLista] = useState(null);
+      const [ultimo, setUltimo] = useState(null);
+      const [acabou, setAcabou] = useState(false);
+      const [carregando, setCarregando] = useState(false);
+      const [filtro, setFiltro] = useState({ formato: '', pilar: '', status: '', busca: '' });
+      const POR_PAGINA = 50;
+
+      async function carregar(depois) {
+        setCarregando(true);
+        try {
+          let q = db.collection(`clientes/${uid}/roteiros`).orderBy('criadoEm', 'desc').limit(POR_PAGINA);
+          if (depois) q = q.startAfter(depois);
+          const snap = await q.get();
+          const novos = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          setLista((l) => [...(depois ? l || [] : []), ...novos]);
+          setUltimo(snap.docs[snap.docs.length - 1] || null);
+          setAcabou(snap.docs.length < POR_PAGINA);
+        } catch (e) {
+          toast(mensagemErro(e));
+          setLista((l) => l || []);
+        }
+        setCarregando(false);
+      }
+      useEffect(() => { carregar(null); }, [uid]);
+
+      const STATUS = { rascunho: 'Rascunho', pronto: 'Pronto para gravar', postado: 'Postado', medido: 'Medido' };
+      const q = filtro.busca.trim().toLowerCase();
+      const visiveis = (lista || []).filter((r) =>
+        (!filtro.formato || r.formato === filtro.formato) && (!filtro.pilar || r.pilar === filtro.pilar) &&
+        (!filtro.status || r.status === filtro.status) && (!q || (r.tema || '').toLowerCase().includes(q)));
+      const muda = (k) => (e) => setFiltro({ ...filtro, [k]: e.target.value });
+
+      return (
+        <>
+          <Cabecalho><button className="btn fantasma mini" onClick={onVoltar}>Voltar</button></Cabecalho>
+          <main className="wrap conteudo stack-lg">
+            <div className="stack">
+              <span className="sobretitulo">Biblioteca</span>
+              <h1>Meus roteiros</h1>
+            </div>
+            <div className="filtros-biblioteca">
+              <input placeholder="Buscar pelo tema" value={filtro.busca} onChange={muda('busca')} aria-label="Buscar pelo tema" />
+              <select value={filtro.formato} onChange={muda('formato')} aria-label="Formato"><option value="">Todos os formatos</option>{Object.entries(FORMATOS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
+              <select value={filtro.pilar} onChange={muda('pilar')} aria-label="Pilar"><option value="">Todos os pilares</option>{Object.entries(PILARES).map(([k, v]) => <option key={k} value={k}>{v.nome}</option>)}</select>
+              <select value={filtro.status} onChange={muda('status')} aria-label="Status"><option value="">Todos os status</option>{Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
+            </div>
+            {!lista && <div className="linha suave"><span className="girando" /> Carregando roteiros...</div>}
+            {lista && !visiveis.length && <div className="cartao vazio"><h3>Nada por aqui</h3><p className="suave">{lista.length ? 'Nenhum roteiro com esse filtro.' : 'Você ainda não criou roteiros.'}</p></div>}
+            <div className="lista-roteiros">
+              {visiveis.map((r) => (
+                <button type="button" key={r.id} className="item-roteiro" onClick={() => onAbrir(r.id)}>
+                  <span className="sobretitulo">{FORMATOS[r.formato]} · {r.pilar}{r.parteSerie ? ` · parte ${r.parteSerie}` : ''} · {dataHora(r.criadoEm)}</span>
+                  <strong>{r.tema}</strong>
+                  <span className="linha" style={{ gap: 6 }}>
+                    <span className={'selo ' + (r.status === 'pronto' ? 'ativo' : r.status === 'rascunho' ? 'testes' : 'vencedor')}>{STATUS[r.status]}</span>
+                    {temMarcaAtiva(r) && <span className="selo alerta">trechos para revisar</span>}
+                  </span>
+                </button>
+              ))}
+            </div>
+            {lista && !acabou && <button className="btn" onClick={() => carregar(ultimo)} disabled={carregando}>{carregando ? <><span className="girando" /> Carregando...</> : 'Carregar mais'}</button>}
           </main>
         </>
       );
     }
 
-    function RoteirosRecentes({ uid, onAbrir }) {
+    function RoteirosRecentes({ uid, onAbrir, onVerTodos }) {
       const [lista, setLista] = useState(null);
       useEffect(() => db.collection(`clientes/${uid}/roteiros`).orderBy('criadoEm', 'desc').limit(8).onSnapshot(
         (s) => setLista(s.docs.map((d) => ({ id: d.id, ...d.data() }))), () => setLista([])
@@ -2099,13 +2365,13 @@
       if (!lista?.length) return null;
       return (
         <section className="stack">
-          <h2>Seus últimos roteiros</h2>
+          <div className="entre"><h2>Seus últimos roteiros</h2><button className="btn mini" onClick={onVerTodos}>Ver todos</button></div>
           <div className="lista-roteiros">
             {lista.map((r) => (
               <button type="button" key={r.id} className="item-roteiro" onClick={() => onAbrir(r.id)}>
                 <span className="sobretitulo">{FORMATOS[r.formato]} · {r.pilar}{r.parteSerie ? ` · parte ${r.parteSerie}` : ''}</span>
                 <strong>{r.tema}</strong>
-                {r.trava && !r.trava.passou && <span className="selo alerta">trechos para revisar</span>}
+                {temMarcaAtiva(r) && <span className="selo alerta">trechos para revisar</span>}
               </button>
             ))}
           </div>
@@ -2573,6 +2839,7 @@
       if (tela === 'perfil') return <MeuPerfil uid={cliente.id} dna={dna} onVoltar={() => setTela('inicio')} />;
       if (tela === 'foco') return <FormFoco uid={cliente.id} produtos={limparProdutos(dna?.produtos)} quem="cliente" cliente={cliente} onVoltar={() => setTela('inicio')} />;
       if (tela === 'criar' && !falta.length) return <CriarRoteiro dna={dna} estrategia={estrategia} mix={mix} contagem={contagem} objetivoPerfil={foco?.objetivoPerfil} onPronto={abrir} onVoltar={() => setTela('inicio')} />;
+      if (tela === 'biblioteca') return <MeusRoteiros uid={cliente.id} onAbrir={abrir} onVoltar={() => setTela('inicio')} />;
       if (tela === 'roteiro') return <VerRoteiro uid={cliente.id} id={roteiroId} onVoltar={() => setTela('inicio')} onAbrir={abrir} />;
 
       return (
@@ -2603,7 +2870,7 @@
               </div>
             </div>
             <CartaoFoco foco={foco} mix={mix} contagem={contagem} onEditar={() => setTela('foco')} />
-            <RoteirosRecentes uid={cliente.id} onAbrir={abrir} />
+            <RoteirosRecentes uid={cliente.id} onAbrir={abrir} onVerTodos={() => setTela('biblioteca')} />
             <LembreteMarca estrategia={estrategia} />
             <GuiaDeTeste crescimento={cliente.crescimento} />
           </main>
