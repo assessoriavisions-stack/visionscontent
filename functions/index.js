@@ -38,7 +38,13 @@ exports.salvarMetricas = posts.salvarMetricas;
 exports.enviarLembretes = require('./lembretes').enviarLembretes;
 
 // Fase 7: campanhas
-exports.gerarCronogramaCampanha = require('./campanhas').gerarCronogramaCampanha; // só tem efeito nos emuladores com IA_FAKE=1
+exports.gerarCronogramaCampanha = require('./campanhas').gerarCronogramaCampanha;
+
+// Fase 8: admin avançado
+const adminAvancado = require('./adminAvancado');
+exports.adminAtualizarTrava = adminAvancado.adminAtualizarTrava;
+exports.adminTestarTrava = adminAvancado.adminTestarTrava;
+exports.adminAtualizarBenchmarks = adminAvancado.adminAtualizarBenchmarks; // só tem efeito nos emuladores com IA_FAKE=1
 
 // Callable mínima usada para verificar o middleware do cliente (status ativo).
 // As próximas fases trocam isto pelas functions reais (gerarRoteiro etc.).

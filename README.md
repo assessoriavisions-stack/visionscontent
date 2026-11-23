@@ -13,7 +13,7 @@ Frontend em um único `index.html` (React + Babel via CDN, no Netlify) e backend
 - [x] Fase 5: postado, métricas e diagnóstico
 - [x] Fase 6: lembretes (PWA + push)
 - [x] Fase 7: campanhas
-- [ ] Fase 8: admin avançado
+- [x] Fase 8: admin avançado
 
 ## Estrutura
 
@@ -170,6 +170,18 @@ e do cabeçalho. Logo em `assets/logo-visions.png`.
   no celular, tocar no post e depois no dia).
 - "Criar roteiro" abre a criação com tudo preenchido e o contexto da campanha (objetivo, oferta,
   mecânica, fase e por quê) no prompt. Status do post acompanha: ideia, roteiro, postado, medido.
+
+## Fase 8: admin avançado
+
+Abas no painel admin: Clientes, Trava, Relatório, Referências e Uso.
+- **Trava**: editor da lista base (ativar/desligar, id, tipo, valor, descrição) com teste ao vivo
+  sobre um texto de exemplo, rodando a trava real do servidor (`adminTestarTrava`) com a lista ainda
+  não salva. `adminAtualizarTrava` valida regex, ids e heurísticas antes de salvar.
+- **Relatório**: padrões mais barrados (7, 30 ou 90 dias), quantos a IA tentou na primeira escrita,
+  quanto foi resolvido, exemplos e contagem por cliente (`logs/trava/registros`).
+- **Referências**: edição de `config/benchmarks` em % (`adminAtualizarBenchmarks`).
+- **Uso**: gerações por cliente nos últimos 6 meses (`clientes/{uid}.geracoesPorMes`), com destaque
+  para quem bateu o limite.
 
 ## Rodar local e testar
 

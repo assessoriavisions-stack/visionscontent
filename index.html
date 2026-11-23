@@ -401,6 +401,21 @@
     .legenda-fases { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--suave); }
     .legenda-fases span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--cor-fase); margin-right: 6px; vertical-align: -1px; }
 
+    /* Fase 8 */
+    .abas-admin { overflow-x: auto; max-width: 100%; }
+    .abas-admin button { white-space: nowrap; }
+    .padrao { background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-sm); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+    .padrao.inativo { opacity: .55; }
+    .padrao-campos { display: grid; grid-template-columns: 1fr 140px; gap: 8px; }
+    .padrao input, .padrao select { min-height: 40px; padding: 8px 10px; }
+    .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13.5px; }
+    .tabela-uso { background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio); overflow-x: auto; }
+    .linha-uso { display: grid; grid-template-columns: minmax(160px, 2fr) repeat(6, minmax(44px, 1fr)); gap: 8px; padding: 12px 16px; border-top: 1px solid var(--linha-2); align-items: center; font-size: 14px; min-width: 520px; }
+    .linha-uso.cab { border-top: 0; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--suave); }
+    .linha-uso.total { font-weight: 600; background: var(--superficie-2); }
+    .linha-uso .num { text-align: right; }
+    .no-limite { color: var(--vermelho); font-weight: 600; }
+
     /* Fase de crescimento */
     .selo.testes { background: var(--azul-claro); color: var(--azul); }
     .selo.vencedor { background: var(--amarelo-claro); color: #8A6400; }
@@ -1009,6 +1024,246 @@
       );
     }
 
+    // ==========================================================
+    // Fase 8: admin avançado
+    // ==========================================================
+    const ABAS_ADMIN = [['clientes', 'Clientes'], ['trava', 'Trava'], ['relatorio', 'Relatório'], ['referencias', 'Referências'], ['uso', 'Uso']];
+    function AbasAdmin({ aba, setAba }) {
+      return (
+        <div className="abas abas-admin" role="tablist">
+          {ABAS_ADMIN.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} className={aba === id ? 'ativa' : ''} onClick={() => setAba(id)}>{nome}</button>)}
+        </div>
+      );
+    }
+
+    const TIPOS_PADRAO = { regex: 'Regex', termo: 'Termo', heuristica: 'Heurística' };
+    function AdminTrava() {
+      const salvo = useDoc('config/travaAntiIA');
+      const [lista, setLista] = useState(null);
+      const [texto, setTexto] = useState('Isso não é sobre preço, é sobre tempo — e a jornada fica mais leve. Simples assim. Pensa nisso. E tudo mudou.');
+      const [campo, setCampo] = useState('fala');
+      const [resultado, setResultado] = useState(null);
+      const [testando, setTestando] = useState(false);
+      const [salvando, setSalvando] = useState(false);
+      const [erro, setErro] = useState('');
+      const [filtro, setFiltro] = useState('');
+      useEffect(() => { if (salvo && !lista) setLista(salvo.padroesBase.map((p) => ({ ...p }))); }, [salvo]);
+      // Teste ao vivo: roda a trava do servidor com a lista atual (mesmo antes de salvar).
+      useEffect(() => {
+        if (!lista) return;
+        const t = setTimeout(async () => {
+          setTestando(true);
+          try {
+            const r = await chamar('adminTestarTrava', { padroesBase: lista, texto, campo });
+            setResultado(r.violacoes);
+            setErro('');
+          } catch (e) { setResultado(null); setErro(mensagemErro(e)); }
+          setTestando(false);
+        }, 700);
+        return () => clearTimeout(t);
+      }, [lista, texto, campo]);
+
+      if (salvo === undefined) return <div className="linha suave"><span className="girando" /> Carregando...</div>;
+      if (salvo === null) return <div className="aviso">A lista da trava ainda não existe. Vá em Clientes e toque em "Criar agora" no aviso de configurações iniciais.</div>;
+      if (!lista) return null;
+      const muda = (i, k, v) => setLista(lista.map((p, j) => (j === i ? { ...p, [k]: v } : p)));
+      const q = filtro.trim().toLowerCase();
+      const alterado = JSON.stringify(lista) !== JSON.stringify(salvo.padroesBase);
+
+      async function salvar() {
+        setSalvando(true);
+        try {
+          const r = await chamar('adminAtualizarTrava', { padroesBase: lista });
+          toast(`Trava salva com ${r.total} padrões. Vale já para a próxima geração.`);
+          setErro('');
+        } catch (e) { setErro(mensagemErro(e)); }
+        setSalvando(false);
+      }
+
+      return (
+        <div className="stack-lg">
+          <section className="cartao"><div className="faixa" /><div className="cartao-corpo stack">
+            <div className="entre"><h2>Teste ao vivo</h2>{testando && <span className="peq suave"><span className="girando" /> conferindo...</span>}</div>
+            <p className="suave peq">Escreva um texto de exemplo. A trava do servidor roda com a lista abaixo, mesmo antes de você salvar.</p>
+            <textarea rows="4" value={texto} onChange={(e) => setTexto(e.target.value)} />
+            <div className="linha">
+              <label className="peq suave" style={{ margin: 0 }}>Testar como</label>
+              <select value={campo} onChange={(e) => setCampo(e.target.value)} style={{ width: 'auto', minHeight: 38, padding: '6px 10px' }}><option value="fala">fala do roteiro</option><option value="legenda">legenda</option></select>
+            </div>
+            {resultado && (
+              <div className="stack">
+                <div className="legenda-texto"><TextoMarcado texto={texto} campo={campo} pendentes={resultado.map((v) => ({ ...v, campo }))} /></div>
+                {resultado.length ? (
+                  <div className="chips">{resultado.map((v, i) => <span key={i} className="chip sem-x" style={{ background: 'var(--vermelho-claro)', color: 'var(--vermelho)' }}>{v.padraoId}: "{v.trecho}"</span>)}</div>
+                ) : <p className="peq" style={{ color: 'var(--verde)' }}>Nenhum padrão encontrado.</p>}
+              </div>
+            )}
+          </div></section>
+
+          <section className="stack">
+            <div className="entre">
+              <h2>Padrões ({lista.filter((p) => p.ativo !== false).length} ativos de {lista.length})</h2>
+              <button className="btn mini" onClick={() => setLista([...lista, { id: '', tipo: 'termo', valor: '', descricao: '', ativo: true }])}>Adicionar padrão</button>
+            </div>
+            <input placeholder="Filtrar por id, valor ou descrição" value={filtro} onChange={(e) => setFiltro(e.target.value)} />
+            <p className="dica">Regex: testada em minúsculas e sem acentos (use n[ãa]o para aceitar os dois). Termo: alternativas separadas por "/", comparadas como palavra inteira. Heurística: frases_vazias, triade, legenda_voce_sabia ou emoji_na_fala.</p>
+            {lista.map((p, i) => (q && ![p.id, p.valor, p.descricao].some((x) => (x || '').toLowerCase().includes(q))) ? null : (
+              <div className={'padrao' + (p.ativo === false ? ' inativo' : '')} key={i}>
+                <div className="entre">
+                  <label className="interruptor"><input type="checkbox" checked={p.ativo !== false} onChange={(e) => muda(i, 'ativo', e.target.checked)} /><span>{p.ativo === false ? 'Desligado' : 'Ativo'}</span></label>
+                  <button className="btn texto peq" style={{ color: 'var(--vermelho)' }} onClick={() => setLista(lista.filter((_, j) => j !== i))}>Remover</button>
+                </div>
+                <div className="padrao-campos">
+                  <input aria-label="id" placeholder="id_do_padrao" value={p.id} onChange={(e) => muda(i, 'id', e.target.value)} />
+                  <select aria-label="tipo" value={p.tipo} onChange={(e) => muda(i, 'tipo', e.target.value)}>{Object.entries(TIPOS_PADRAO).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
+                </div>
+                <input aria-label="valor" className={p.tipo === 'regex' ? 'mono' : ''} placeholder={p.tipo === 'termo' ? 'é importante / é essencial' : p.tipo === 'regex' ? '\\bn[ãa]o\\s+se\\s+trata\\b' : 'frases_vazias'} value={p.valor} onChange={(e) => muda(i, 'valor', e.target.value)} />
+                <input aria-label="descrição" placeholder="Descrição (aparece para a IA na reescrita)" value={p.descricao || ''} onChange={(e) => muda(i, 'descricao', e.target.value)} />
+              </div>
+            ))}
+          </section>
+          {erro && <div className="erro" role="alert">{erro}</div>}
+          <div className="barra-acoes">
+            <button className="btn" disabled={!alterado || salvando} onClick={() => setLista(salvo.padroesBase.map((p) => ({ ...p })))}>Descartar mudanças</button>
+            <button className="btn primario" disabled={!alterado || salvando} onClick={salvar}>{salvando ? <><span className="girando" /> Salvando...</> : 'Salvar lista'}</button>
+          </div>
+        </div>
+      );
+    }
+
+    function AdminRelatorio({ clientes }) {
+      const [dias, setDias] = useState(30);
+      const [logs, setLogs] = useState(null);
+      useEffect(() => {
+        setLogs(null);
+        const desde = new Date(Date.now() - dias * 86400000);
+        db.collection('logs/trava/registros').where('em', '>=', desde).orderBy('em', 'desc').limit(3000).get()
+          .then((s) => setLogs(s.docs.map((d) => d.data()))).catch(() => setLogs([]));
+      }, [dias]);
+      if (!logs) return <div className="linha suave"><span className="girando" /> Carregando os registros...</div>;
+      const primeiras = logs.filter((l) => l.tentativa === 0);
+      const porPadrao = {};
+      for (const l of logs) {
+        const x = porPadrao[l.padraoId] || (porPadrao[l.padraoId] = { id: l.padraoId, total: 0, primeira: 0, resolvidos: 0, exemplos: [] });
+        x.total++;
+        if (l.tentativa === 0) x.primeira++;
+        if (l.resolvido) x.resolvidos++;
+        if (x.exemplos.length < 3 && !x.exemplos.includes(l.trecho)) x.exemplos.push(l.trecho);
+      }
+      const ranking = Object.values(porPadrao).sort((a, b) => b.primeira - a.primeira || b.total - a.total);
+      const max = Math.max(1, ...ranking.map((r) => r.primeira));
+      const naoResolvidos = logs.filter((l) => !l.resolvido && l.tentativa !== 0).length;
+      const nomeCliente = (uid) => clientes?.find((c) => c.id === uid)?.nome || 'cliente removido';
+      const porCliente = {};
+      primeiras.forEach((l) => { porCliente[l.uid] = (porCliente[l.uid] || 0) + 1; });
+      return (
+        <div className="stack-lg">
+          <div className="entre">
+            <p className="suave" style={{ maxWidth: 560 }}>Quais padrões a IA mais tenta usar antes da trava corrigir. Ajuda a decidir o que reforçar no prompt ou acrescentar na lista.</p>
+            <select value={dias} onChange={(e) => setDias(Number(e.target.value))} style={{ width: 'auto' }}><option value={7}>Últimos 7 dias</option><option value={30}>Últimos 30 dias</option><option value={90}>Últimos 90 dias</option></select>
+          </div>
+          <div className="indicadores">
+            <div className="indicador v"><span className="sobretitulo">Tentativas da IA</span><div className="valor">{primeiras.length}</div></div>
+            <div className="indicador a"><span className="sobretitulo">Padrões diferentes</span><div className="valor">{ranking.length}</div></div>
+            <div className="indicador r"><span className="sobretitulo">Ficaram marcados</span><div className="valor">{naoResolvidos}</div></div>
+          </div>
+          {!ranking.length && <div className="cartao vazio"><h3>Nenhum registro no período</h3><p className="suave">Assim que os clientes gerarem conteúdo, os padrões barrados aparecem aqui.</p></div>}
+          <div className="stack">
+            {ranking.map((r) => (
+              <div className="cartao" key={r.id}><div className="cartao-corpo stack" style={{ padding: 18 }}>
+                <div className="entre"><strong>{r.id}</strong><span className="num peq suave">{r.primeira} na primeira escrita · {Math.round((r.resolvidos / r.total) * 100)}% resolvidos</span></div>
+                <div className="barra"><i style={{ width: `${(r.primeira / max) * 100}%` }} /></div>
+                {r.exemplos.length > 0 && <p className="peq suave">Ex.: {r.exemplos.map((e) => `"${e.slice(0, 80)}"`).join(' · ')}</p>}
+              </div></div>
+            ))}
+          </div>
+          {Object.keys(porCliente).length > 0 && (
+            <section className="cartao"><div className="cartao-corpo">
+              <h3>Por cliente</h3>
+              <dl className="dados">{Object.entries(porCliente).sort((a, b) => b[1] - a[1]).map(([uid, n]) => <React.Fragment key={uid}><dt>{nomeCliente(uid)}</dt><dd className="num">{n}</dd></React.Fragment>)}</dl>
+            </div></section>
+          )}
+        </div>
+      );
+    }
+
+    const GRUPOS_BENCH = {
+      reels: { nome: 'Reels', campos: { retencao3s: 'Retenção nos 3s', tempoMedioSobreDuracao: 'Tempo médio ÷ duração', taxaCompart: 'Compartilhamento', taxaSalv: 'Salvamento', taxaComent: 'Comentário' } },
+      carrossel: { nome: 'Carrossel', campos: { taxaCompart: 'Compartilhamento', taxaSalv: 'Salvamento', taxaComent: 'Comentário' } },
+      postUnico: { nome: 'Post único', campos: { taxaCompart: 'Compartilhamento', taxaSalv: 'Salvamento', taxaComent: 'Comentário' } },
+      stories: { nome: 'Stories', campos: { retencaoSequencia: 'Retenção da sequência', taxaResposta: 'Respostas' } },
+    };
+    function AdminReferencias() {
+      const salvo = useDoc('config/benchmarks');
+      const [v, setV] = useState(null);
+      const [salvando, setSalvando] = useState(false);
+      const [erro, setErro] = useState('');
+      useEffect(() => {
+        if (salvo && !v) setV(Object.fromEntries(Object.entries(GRUPOS_BENCH).map(([g, info]) => [g, Object.fromEntries(Object.keys(info.campos).map((k) => [k, String(+(((salvo[g]?.[k]) ?? 0) * 100).toFixed(2)).replace('.', ',')]))])));
+      }, [salvo]);
+      if (salvo === undefined) return <div className="linha suave"><span className="girando" /> Carregando...</div>;
+      if (salvo === null) return <div className="aviso">As referências ainda não existem. Vá em Clientes e toque em "Criar agora" no aviso de configurações iniciais.</div>;
+      if (!v) return null;
+      async function salvar() {
+        setErro('');
+        setSalvando(true);
+        try {
+          const dados = Object.fromEntries(Object.entries(v).map(([g, cs]) => [g, Object.fromEntries(Object.entries(cs).map(([k, x]) => [k, Number(String(x).replace(',', '.')) / 100]))]));
+          await chamar('adminAtualizarBenchmarks', dados);
+          toast('Referências salvas.');
+        } catch (e) { setErro(mensagemErro(e)); }
+        setSalvando(false);
+      }
+      return (
+        <div className="stack-lg">
+          <p className="suave" style={{ maxWidth: 620 }}>Usadas no diagnóstico enquanto o cliente tem menos de 3 posts medidos no formato. Depois disso, a comparação passa a ser com a mediana dos posts dele.</p>
+          <div className="grade">
+            {Object.entries(GRUPOS_BENCH).map(([g, info]) => (
+              <section className="cartao" key={g}><div className="cartao-corpo stack">
+                <h3>{info.nome}</h3>
+                {Object.entries(info.campos).map(([k, nome]) => (
+                  <div className="entre" key={k} style={{ flexWrap: 'nowrap' }}>
+                    <label htmlFor={`b-${g}-${k}`} style={{ margin: 0 }}>{nome}</label>
+                    <span className="linha" style={{ flexWrap: 'nowrap', gap: 6 }}>
+                      <input id={`b-${g}-${k}`} inputMode="decimal" style={{ width: 90, textAlign: 'right', minHeight: 40 }} value={v[g][k]} onChange={(e) => setV({ ...v, [g]: { ...v[g], [k]: e.target.value } })} />
+                      <span className="suave">%</span>
+                    </span>
+                  </div>
+                ))}
+              </div></section>
+            ))}
+          </div>
+          {erro && <div className="erro" role="alert">{erro}</div>}
+          <div className="barra-acoes"><button className="btn primario" onClick={salvar} disabled={salvando}>{salvando ? <><span className="girando" /> Salvando...</> : 'Salvar referências'}</button></div>
+        </div>
+      );
+    }
+
+    function AdminUso({ clientes }) {
+      if (!clientes) return <div className="linha suave"><span className="girando" /> Carregando...</div>;
+      const meses = [];
+      const d = new Date(`${mesReferencia()}-15T12:00:00-03:00`);
+      for (let i = 0; i < 6; i++) { meses.unshift(mesReferencia(d)); d.setMonth(d.getMonth() - 1); }
+      const nome = (m) => new Intl.DateTimeFormat('pt-BR', { month: 'short', timeZone: FUSO }).format(new Date(`${m}-15T12:00:00-03:00`)).replace('.', '');
+      const total = (m) => clientes.reduce((s, c) => s + (c.geracoesPorMes?.[m] || 0), 0);
+      const lista = [...clientes].sort((a, b) => (b.geracoesPorMes?.[mesReferencia()] || 0) - (a.geracoesPorMes?.[mesReferencia()] || 0));
+      return (
+        <div className="stack-lg">
+          <p className="suave">Gerações por cliente (roteiros, partes de série e cronogramas de campanha). O mês atual aparece por último.</p>
+          <div className="tabela-uso" role="table">
+            <div className="linha-uso cab" role="row"><span role="columnheader">Cliente</span>{meses.map((m) => <span key={m} role="columnheader" className="num">{nome(m)}</span>)}</div>
+            {lista.map((c) => (
+              <div className="linha-uso" role="row" key={c.id}>
+                <span role="cell" className="nome-uso">{c.nome}{c.status !== 'ativo' && <span className="selo bloqueado" style={{ marginLeft: 6 }}>bloqueado</span>}{c.limiteGeracoesMes != null && <span className="suave peq"> · limite {c.limiteGeracoesMes}</span>}</span>
+                {meses.map((m) => <span role="cell" key={m} className={'num' + (m === mesReferencia() && c.limiteGeracoesMes != null && (c.geracoesPorMes?.[m] || 0) >= c.limiteGeracoesMes ? ' no-limite' : '')}>{c.geracoesPorMes?.[m] || '·'}</span>)}
+              </div>
+            ))}
+            <div className="linha-uso total" role="row"><span role="cell">Total</span>{meses.map((m) => <span role="cell" key={m} className="num">{total(m)}</span>)}</div>
+          </div>
+        </div>
+      );
+    }
+
     function PainelAdmin() {
       const [clientes, setClientes] = useState(null);
       const [erro, setErro] = useState('');
@@ -1017,6 +1272,7 @@
       const [modal, setModal] = useState(null); // {tipo: 'novo'|'editar'|'senha', dados}
       const [configFalta, setConfigFalta] = useState(false);
       const [estrategiaDe, setEstrategiaDe] = useState(null);
+      const [aba, setAba] = useState('clientes');
 
       useEffect(() => {
         const parar = db.collection('clientes').onSnapshot(
@@ -1065,6 +1321,12 @@
           </Cabecalho>
 
           <main className="wrap conteudo stack-lg">
+            <AbasAdmin aba={aba} setAba={setAba} />
+            {aba === 'trava' && <><div className="stack"><span className="sobretitulo">Trava anti-IA</span><h1>Lista de padrões</h1></div><AdminTrava /></>}
+            {aba === 'relatorio' && <><div className="stack"><span className="sobretitulo">Trava anti-IA</span><h1>Padrões mais barrados</h1></div><AdminRelatorio clientes={clientes} /></>}
+            {aba === 'referencias' && <><div className="stack"><span className="sobretitulo">Diagnóstico</span><h1>Referências de métricas</h1></div><AdminReferencias /></>}
+            {aba === 'uso' && <><div className="stack"><span className="sobretitulo">Custos</span><h1>Uso por cliente</h1></div><AdminUso clientes={clientes} /></>}
+            {aba === 'clientes' && <>
             <div className="entre" style={{ alignItems: 'flex-end' }}>
               <div>
                 <span className="sobretitulo">Painel</span>
@@ -1116,6 +1378,7 @@
                 ))}
               </div>
             </div>
+            </>}
           </main>
 
           {modal?.tipo === 'novo' && <FormCliente onFechar={fechar} onCriado={(d) => setModal({ tipo: 'senha', dados: d })} />}

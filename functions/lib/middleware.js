@@ -77,7 +77,9 @@ async function registrarGeracao(uid) {
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     const atual = geracoesNoMesAtual(snap.data() || {});
-    tx.update(ref, { geracoesNoMes: atual + 1, mesReferencia: mesReferencia() });
+    const mes = mesReferencia();
+    // Histórico de uso por mês (relatório do admin) além do contador do mês atual.
+    tx.update(ref, { geracoesNoMes: atual + 1, mesReferencia: mes, [`geracoesPorMes.${mes}`]: FieldValue.increment(1) });
   });
 }
 
