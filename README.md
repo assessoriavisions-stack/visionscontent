@@ -2,7 +2,7 @@
 
 Plataforma web em que clientes da Visions Marketing geram roteiros para Instagram com a voz de cada perfil.
 Frontend em um único `index.html` (React + Babel via CDN, no Netlify) e backend no Firebase
-(Auth, Firestore, Cloud Functions v2 em Node 20, Scheduler e FCM).
+(Auth, Firestore, Cloud Functions v2 em Node 22, Scheduler e FCM).
 
 ## Status
 
